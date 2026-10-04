@@ -37,7 +37,8 @@ Kicker_CFLAGS := -Isrc -Isrc/Kick -Isrc/Net -Isrc/UI -Isrc/Util \
 # sources by the pragma in src/KCCommon.h (vendored code only warns).
 Kicker_OBJCFLAGS := -fobjc-arc -Wunguarded-availability
 
-Kicker_LDFLAGS := -lz
+# (the link map keeps every function's address after the binary is stripped: crash reports are read with it)
+Kicker_LDFLAGS := -lz -Wl,-map,$(THEOS_PROJECT_DIR)/Kicker-link.map
 
 include $(THEOS)/makefiles/application.mk
 

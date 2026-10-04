@@ -196,6 +196,13 @@ jobs:
             packages/*.deb
           if-no-files-found: error
 
+      - name: Upload link map (for reading crash reports)
+        uses: actions/upload-artifact@v4
+        with:
+          name: link-map
+          path: Kicker-link.map
+          if-no-files-found: warn
+
       - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v4

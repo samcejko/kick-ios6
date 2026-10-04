@@ -3,6 +3,7 @@ obj/
 packages/
 vendor/mbedtls/
 vendor/libwebp/
+Kicker-link.map
 Resources/licenses/
 Resources/Icon*.png
 Resources/Default*.png
