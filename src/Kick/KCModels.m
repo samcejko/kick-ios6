@@ -35,7 +35,8 @@ NSString *KCImageURL(id node, NSInteger width)
     if ([node isKindOfClass:[NSString class]]) return [node length] ? node : nil;
     NSDictionary *d = KCDict(node);
     if (!d) return nil;
-    NSString *picked = KCPickWidth(KCParseSrcset(KCStr(d[@"srcset"])), width);
+    // (the sizes come as "srcset", in category lists as "responsive")
+    NSString *picked = KCPickWidth(KCParseSrcset(KCStr(d[@"srcset"]) ?: KCStr(d[@"responsive"])), width);
     if (picked.length) return picked;
     NSString *plain = KCStr(d[@"src"]) ?: KCStr(d[@"url"]);
     return plain.length ? plain : nil;

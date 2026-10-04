@@ -96,7 +96,7 @@
 + (instancetype)clipFromKick:(NSDictionary *)item;
 @end
 
-// The picture of a {src, srcset} / {url} object (or a plain string), the smallest at least `width` wide
+// The picture of a {src, srcset} / {url, responsive} object (or a plain string), the smallest at least `width` wide
 NSString *KCImageURL(id node, NSInteger width);
 // "url 1920w, url 1280w" -> NSNumber width -> URL
 NSDictionary *KCParseSrcset(NSString *srcset);
