@@ -1,0 +1,195 @@
+/* Kicker – čeština */
+
+/* Tabs and titles */
+"Live" = "Živě";
+"Categories" = "Kategorie";
+"Favorites" = "Oblíbené";
+"Search" = "Hledat";
+"Settings" = "Nastavení";
+"Live Channels" = "Živé kanály";
+"Clips" = "Klipy";
+"Videos" = "Záznamy";
+"Quality" = "Kvalita";
+
+/* Common */
+"Cancel" = "Zrušit";
+"OK" = "OK";
+"Try Again" = "Zkusit znovu";
+"Close" = "Zavřít";
+"Remove" = "Odebrat";
+"Auto" = "Auto";
+"Automatic" = "Automaticky";
+"Audio only" = "Jen zvuk";
+"Source (best)" = "Zdroj (nejlepší)";
+"%@ (source)" = "%@ (zdroj)";
+"Video" = "Video";
+"Clip" = "Klip";
+"Untitled" = "Bez názvu";
+"Nothing here right now." = "Teď tu nic není.";
+"Nothing here." = "Nic tu není.";
+"Could not refresh" = "Nepodařilo se obnovit";
+"Offline" = "Offline";
+"OFFLINE" = "OFFLINE";
+"LIVE" = "ŽIVĚ";
+"Live now" = "Právě živě";
+"Offline · lately %@" = "Offline · naposledy %@";
+"%@ viewers" = "%@ diváků";
+"%@ views" = "%@ zhlédnutí";
+"%@ followers" = "%@ sledujících";
+"%ld min" = "%ld min";
+"just now" = "právě teď";
+"%ld min ago" = "před %ld min";
+"%ld h ago" = "před %ld h";
+"yesterday" = "včera";
+"%ld days ago" = "před %ld dny";
+"Verified" = "Ověřený";
+"Affiliate" = "Affiliate";
+"Category" = "Kategorie";
+"clipped by %@" = "vystřihl %@";
+
+/* Network errors */
+"Cancelled" = "Zrušeno";
+"The server sent an invalid response." = "Server poslal neplatnou odpověď.";
+"Unexpected response: %@" = "Neočekávaná odpověď: %@";
+"Connection failed." = "Připojení selhalo.";
+"Sending the request failed." = "Odeslání požadavku selhalo.";
+"Connection lost." = "Spojení bylo přerušeno.";
+"The server closed the connection without responding." = "Server ukončil spojení bez odpovědi.";
+"Request failed (HTTP %ld)." = "Požadavek selhal (HTTP %ld).";
+"Unexpected response format." = "Neočekávaný formát odpovědi.";
+"Could not resolve %@ (%s). Is the device online?" = "Nelze přeložit adresu %@ (%s). Je zařízení online?";
+"connection timed out" = "vypršel čas připojení";
+"Could not connect to %@: %@" = "Nelze se připojit k %@: %@";
+"The certificate bundle is missing, cannot verify the server." = "Chybí balík certifikátů, server nelze ověřit.";
+"Check the date and time of this device." = "Zkontroluj datum a čas zařízení.";
+"Certificate verification can be turned off in Settings." = "Ověřování certifikátů lze vypnout v Nastavení.";
+"Server certificate rejected: %@. %@" = "Certifikát serveru odmítnut: %@. %@";
+"TLS handshake timed out." = "Vypršel čas TLS handshaku.";
+"TLS handshake failed: %@" = "TLS handshake selhal: %@";
+"Sending the request failed: %@" = "Odeslání požadavku selhalo: %@";
+"The server stopped responding (timeout)." = "Server přestal odpovídat (timeout).";
+"Receiving the response failed: %@" = "Příjem odpovědi selhal: %@";
+"Content decoding failed." = "Dekódování obsahu selhalo.";
+"Nothing was found at this address." = "Na této adrese nic není.";
+"This channel does not exist." = "Tento kanál neexistuje.";
+"The channel is not live right now." = "Kanál teď nevysílá.";
+"This content is restricted (subscribers only, or not available in your country)." = "Tento obsah je omezený (jen pro odběratele, nebo není dostupný ve tvé zemi).";
+"This video is not available any more." = "Toto video už není k dispozici.";
+"The stream list could not be read." = "Seznam kvalit se nepodařilo načíst.";
+"The local video proxy could not start." = "Nepodařilo se spustit místní video proxy.";
+"The stream could not be played. It may have ended, or the connection is too slow." = "Stream se nepodařilo přehrát. Možná skončil, nebo je připojení příliš pomalé.";
+"The video could not be played." = "Video se nepodařilo přehrát.";
+"Playback failed." = "Přehrávání selhalo.";
+"The stream has ended." = "Stream skončil.";
+
+/* Browse */
+"No live channels for this language right now." = "V tomto jazyce teď nikdo nevysílá.";
+"Language" = "Jazyk";
+"All languages" = "Všechny jazyky";
+"Show channels streaming in" = "Zobrazit kanály vysílající";
+"Nobody is streaming this right now." = "Tohle teď nikdo nevysílá.";
+"No clips this week." = "Tento týden žádné klipy.";
+"No clips in this period." = "V tomto období žádné klipy.";
+"No past broadcasts. The channel may keep none." = "Žádné záznamy. Kanál je možná neukládá.";
+"Today" = "Dnes";
+"This week" = "Tento týden";
+"This month" = "Tento měsíc";
+"All time" = "Vše";
+"Clips from" = "Klipy z období";
+"Watch Live" = "Sledovat živě";
+"Favorite" = "Oblíbený";
+"Add Favorite" = "Přidat k oblíbeným";
+"LIVE:" = "ŽIVĚ:";
+
+/* Favorites */
+"No favorites yet. Open a channel and tap the star to keep it here." = "Zatím žádné oblíbené. Otevři kanál a klepni na hvězdičku, bude pak tady.";
+
+/* Search */
+"Channels and categories" = "Kanály a kategorie";
+"No channel or category with this name." = "Žádný kanál ani kategorie s tímto názvem.";
+"Recent searches" = "Nedávné hledání";
+"Channels" = "Kanály";
+"Clear recent searches" = "Smazat nedávné hledání";
+
+/* Player */
+" (too much for this device)" = " (na toto zařízení moc)";
+"Connected to the chat of %@." = "Připojeno k chatu kanálu %@.";
+"Connection to the chat lost. Reconnecting…" = "Spojení s chatem přerušeno. Připojuji znovu…";
+"The chat server closed the connection." = "Server chatu ukončil spojení.";
+"Chat replay: the messages appear as they did during the broadcast." = "Záznam chatu: zprávy se objevují tak, jak šly během vysílání.";
+"There is no chat replay for this video." = "K tomuto videu záznam chatu není.";
+"Chat mode: %@." = "Režim chatu: %@.";
+"emotes only" = "jen emotikony";
+"subscribers only" = "jen odběratelé";
+"followers only (%ld min)" = "jen sledující (%ld min)";
+"followers only" = "jen sledující";
+"slow mode %ld s" = "pomalý režim %ld s";
+
+/* Chat */
+"<message deleted>" = "<zpráva smazána>";
+"The chat was cleared by a moderator." = "Moderátor vymazal chat.";
+"%@ was timed out for %@." = "%@ dostal timeout na %@.";
+"%@ was banned." = "%@ dostal ban.";
+"%@ subscribed for %ld months" = "%@ odebírá už %ld měsíců";
+"%@ subscribed" = "%@ začal odebírat";
+"%@ gifted %lu subscriptions" = "%@ daroval odběry: %lu";
+"%@ is hosting with %@" = "%@ hostuje s %@";
+"%lu new messages ↓" = "Nové zprávy: %lu ↓";
+"Open Link" = "Otevřít odkaz";
+"Copy Link" = "Kopírovat odkaz";
+"Open Channel" = "Otevřít kanál";
+"Copy Message" = "Kopírovat zprávu";
+"Open in Surfari" = "Otevřít v Surfari";
+"Open in Safari" = "Otevřít v Safari";
+"Copy link" = "Kopírovat odkaz";
+
+/* Settings */
+"Playback" = "Přehrávání";
+"Chat" = "Chat";
+"Appearance" = "Vzhled";
+"Advanced" = "Pokročilé";
+"About" = "O aplikaci";
+"This device decodes H.264 up to 1080p at 30 frames per second; renditions beyond that are left out of \"Automatic\"." = "Toto zařízení dekóduje H.264 do 1080p při 30 snímcích za sekundu; vyšší kvality „Automaticky“ vynechává.";
+"The chat is read without an account, so writing in it is not possible." = "Chat se čte bez účtu, takže do něj psát nejde.";
+"Turn certificate verification off only if the device clock is wrong or the certificate bundle is outdated." = "Ověřování certifikátů vypni jen pokud jsou špatně hodiny zařízení nebo je balík certifikátů zastaralý.";
+"Kicker is an unofficial app. It is not made by Kick and has no connection to it." = "Kicker je neoficiální aplikace. Nedělá ji Kick a nemá s ním nic společného.";
+"Sound in background" = "Zvuk na pozadí";
+"Keep screen on" = "Nezhasínat obrazovku";
+"Text size" = "Velikost písma";
+"Small" = "Malé";
+"Medium" = "Střední";
+"Large" = "Velké";
+"Timestamps" = "Časy zpráv";
+"Animated emotes" = "Animované emotikony";
+"7TV emotes" = "Emotikony 7TV";
+"Show deleted messages" = "Zobrazovat smazané zprávy";
+"Lines between messages" = "Čáry mezi zprávami";
+"Theme" = "Vzhled";
+"Light" = "Světlý";
+"Dark" = "Tmavý";
+"Verify certificates" = "Ověřovat certifikáty";
+"Clear image cache" = "Smazat mezipaměť obrázků";
+"Clearing…" = "Mažu…";
+"Connection test" = "Test spojení";
+"Tap to test the connection to Kick" = "Klepni pro test spojení s Kickem";
+"Testing…" = "Testuji…";
+"Kick answered (HTTP %ld) in %.1f s" = "Kick odpověděl (HTTP %ld) za %.1f s";
+"Version" = "Verze";
+"Author" = "Autor";
+"Root certificates" = "Kořenové certifikáty";
+"Device" = "Zařízení";
+"The player picks what the connection allows, up to what the device decodes." = "Přehrávač volí podle připojení, až po to, co zařízení zvládne.";
+"The streamer's own quality, when the device can decode it." = "Kvalita, v jaké streamer vysílá, pokud ji zařízení zvládne.";
+"Just the sound, for the background." = "Jen zvuk, na pozadí.";
+
+/* Player buttons (VoiceOver labels) */
+"Play" = "Přehrát";
+"Pause" = "Pozastavit";
+"Back 10 seconds" = "Zpět o 10 sekund";
+"Forward 10 seconds" = "Vpřed o 10 sekund";
+"Show chat" = "Zobrazit chat";
+"Hide chat" = "Skrýt chat";
+"Full screen" = "Celá obrazovka";
+"Exit full screen" = "Ukončit celou obrazovku";
+"Back" = "Zpět";
+"Channel" = "Kanál";

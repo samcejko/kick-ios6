@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Kicker app icon (master, full-bleed square: iOS rounds the corners). Rendered by tools/gen_assets.py with
+     rsvg-convert. A blocky, stair-stepped K of green glass (soft pixel corners, a dark green body behind it, a glow)
+     on a black aqua tile. The icon carries its own gloss (UIPrerenderedIcon is on). -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1024" height="1024" viewBox="0 0 160 160">
+  <defs>
+    <!-- the tile: grey at the top, the black "horizon" in the middle, a little lighter again at the bottom -->
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5c645c"/>
+      <stop offset="0.46" stop-color="#1e231f"/>
+      <stop offset="0.5" stop-color="#0a0d0b"/>
+      <stop offset="1" stop-color="#252b26"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.52" r="0.5">
+      <stop offset="0" stop-color="#53fc18" stop-opacity="0.34"/>
+      <stop offset="0.6" stop-color="#53fc18" stop-opacity="0.1"/>
+      <stop offset="1" stop-color="#53fc18" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.08"/>
+    </linearGradient>
+    <!-- the glass of the letter: pale green at the top, the bright green below -->
+    <linearGradient id="face" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c9ffad"/>
+      <stop offset="0.45" stop-color="#74ff3a"/>
+      <stop offset="1" stop-color="#3fd30c"/>
+    </linearGradient>
+    <linearGradient id="faceGloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.05"/>
+    </linearGradient>
+    <!-- the body behind the glass: deep green, lit from above -->
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a8f08"/>
+      <stop offset="1" stop-color="#0d3f02"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="150%">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+    <!-- the K on a 12-unit grid, 6 x 7 cells: a two-cell stem, a joint, and arms that climb and fall in two steps
+         with a notch between them -->
+    <path id="k" d="M47,35 H71 V59 H83 V47 H95 V35 H119 V59 H95 V71 H83 V83 H95 V95 H119 V119 H95 V107 H83 V95 H71 V119 H47 Z"/>
+    <clipPath id="kclip"><use xlink:href="#k"/></clipPath>
+  </defs>
+
+  <rect width="160" height="160" fill="url(#bg)"/>
+  <rect width="160" height="160" fill="url(#glow)"/>
+
+  <g transform="translate(80,78) scale(0.98) translate(-80,-78)">
+    <!-- a soft shadow, the dark body stepped off to the left and down, the glass face with rounded pixel corners -->
+    <use xlink:href="#k" transform="translate(-2,8)" filter="url(#soft)" fill="#000000" fill-opacity="0.6"/>
+    <g fill="url(#body)" stroke="url(#body)" stroke-width="3" stroke-linejoin="round">
+      <use xlink:href="#k" transform="translate(-1.5,1.5)"/>
+      <use xlink:href="#k" transform="translate(-3,3)"/>
+      <use xlink:href="#k" transform="translate(-4.5,4.5)"/>
+      <use xlink:href="#k" transform="translate(-6,6)"/>
+    </g>
+    <use xlink:href="#k" fill="url(#face)" stroke="url(#face)" stroke-width="3" stroke-linejoin="round"/>
+    <use xlink:href="#k" fill="none" stroke="#1b6e02" stroke-opacity="0.45" stroke-width="0.8" stroke-linejoin="round"/>
+    <!-- the glass highlight on the letter -->
+    <rect x="40" y="30" width="84" height="40" fill="url(#faceGloss)" clip-path="url(#kclip)"/>
+  </g>
+
+  <!-- gloss over the whole tile -->
+  <path d="M0,0 L160,0 L160,72 Q80,78 0,72 Z" fill="url(#gloss)"/>
+</svg>

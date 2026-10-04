@@ -1,0 +1,9 @@
+Package: com.samcejko.kicker
+Name: Kicker
+Version: 0.1.0
+Architecture: iphoneos-arm
+Description: Unofficial Kick client for iOS 6 (universal): live streams, past broadcasts, clips and chat
+Maintainer: samcejko
+Author: samcejko
+Section: Multimedia
+Depends: firmware (>= 6.0)
