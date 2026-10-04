@@ -17,6 +17,38 @@ static const NSInteger KCPageSize = 24;
 static const NSInteger KCFilterPageLimit = 5;      // pages fetched in one go to fill a filtered list
 static const NSUInteger KCParallelChannels = 6;
 
+// Requests that take several steps keep their state in an object their completion blocks hold - never in a block
+// stored in a __block variable: the optimizer may leave such a block on the stack, and releasing it later crashes.
+
+// A walk through pages of the live directory (more pages while a language filter leaves the list empty)
+@interface KCStreamWalk : NSObject
+@property (nonatomic, strong) KCHTTPTask *outer;          // what the caller holds and may cancel
+@property (nonatomic, strong) KCHTTPTask *current;        // the page request under way
+@property (nonatomic, copy) NSString *query;
+@property (nonatomic, copy) KCListCompletion completion;
+@property (nonatomic, strong) NSMutableArray *gathered;
+@property (nonatomic) NSInteger fetched;
+@end
+
+@implementation KCStreamWalk
+@end
+
+// Several channels asked for side by side (the favourites)
+@interface KCChannelBatch : NSObject
+@property (nonatomic, strong) KCHTTPTask *outer;
+@property (nonatomic, copy) NSArray *slugs;
+@property (nonatomic, strong) NSMutableArray *results;    // KCChannel or NSNull, by position
+@property (nonatomic, strong) NSMutableArray *tasks;
+@property (nonatomic, strong) NSError *failure;
+@property (nonatomic, copy) void (^completion)(NSArray *channels, NSError *error);
+@property (nonatomic) NSUInteger next;
+@property (nonatomic) NSUInteger running;
+@property (nonatomic) NSUInteger done;
+@end
+
+@implementation KCChannelBatch
+@end
+
 @implementation KCAPI
 
 + (NSDictionary *)headers
@@ -74,32 +106,46 @@ static const NSUInteger KCParallelChannels = 6;
 // more), so a filtered list does not come back empty while further pages would have had streams
 + (KCHTTPTask *)streamPagesAt:(NSInteger)page query:(NSString *)query completion:(KCListCompletion)completion
 {
-    KCHTTPTask *outer = [[KCHTTPTask alloc] init];
-    __block KCHTTPTask *inner = nil;
-    __block void (^fetch)(NSInteger) = nil;
-    outer.cancelBlock = ^{ [inner cancel]; fetch = nil; };
-    NSMutableArray *gathered = [NSMutableArray array];
-    __block NSInteger fetched = 0;
-    fetch = ^(NSInteger p) {
-        NSString *path = [NSString stringWithFormat:@"/stream/livestreams/en?page=%ld&limit=%ld&sort=desc%@", (long)p, (long)KCPageSize, query ?: @""];
-        inner = [self get:path completion:^(id json, NSError *error) {
-            if (outer.isCancelled) { fetch = nil; return; }
-            if (error) { completion(gathered.count ? gathered : nil, nil, gathered.count ? nil : error); fetch = nil; return; }
-            NSDictionary *d = KCDict(json);
-            for (id item in KCArr(d[@"data"])) {
-                KCStream *s = [KCStream streamFromKick:item];
-                if (s && [self streamMatchesLanguageFilter:s]) [gathered addObject:s];
-            }
-            fetched++;
-            BOOL more = [KCStr(d[@"next_page_url"]) length] > 0;
-            NSString *next = more ? [NSString stringWithFormat:@"%ld", (long)(p + 1)] : nil;
-            if (!gathered.count && more && fetched < KCFilterPageLimit) { fetch(p + 1); return; }
-            completion(gathered, next, nil);
-            fetch = nil;
-        }];
+    KCStreamWalk *walk = [[KCStreamWalk alloc] init];
+    walk.outer = [[KCHTTPTask alloc] init];
+    walk.query = query;
+    walk.completion = completion;
+    walk.gathered = [NSMutableArray array];
+    // (the request's blocks keep the walk alive; the caller's task only reaches it weakly)
+    __weak KCStreamWalk *weakWalk = walk;
+    walk.outer.cancelBlock = ^{
+        KCStreamWalk *w = weakWalk;
+        [w.current cancel];
+        w.current = nil;
     };
-    fetch(page);
-    return outer;
+    [self fetchStreamPage:page walk:walk];
+    return walk.outer;
+}
+
++ (void)fetchStreamPage:(NSInteger)page walk:(KCStreamWalk *)walk
+{
+    NSString *path = [NSString stringWithFormat:@"/stream/livestreams/en?page=%ld&limit=%ld&sort=desc%@", (long)page, (long)KCPageSize, walk.query ?: @""];
+    walk.current = [self get:path completion:^(id json, NSError *error) {
+        walk.current = nil;   // (the task holds this block: no cycle once it has answered)
+        if (walk.outer.isCancelled) return;
+        NSMutableArray *gathered = walk.gathered;
+        if (error) {
+            walk.completion(gathered.count ? gathered : nil, nil, gathered.count ? nil : error);
+            return;
+        }
+        NSDictionary *d = KCDict(json);
+        for (id item in KCArr(d[@"data"])) {
+            KCStream *s = [KCStream streamFromKick:item];
+            if (s && [self streamMatchesLanguageFilter:s]) [gathered addObject:s];
+        }
+        walk.fetched = walk.fetched + 1;
+        BOOL more = [KCStr(d[@"next_page_url"]) length] > 0;
+        if (!gathered.count && more && walk.fetched < KCFilterPageLimit) {
+            [self fetchStreamPage:page + 1 walk:walk];
+            return;
+        }
+        walk.completion(gathered, more ? [NSString stringWithFormat:@"%ld", (long)(page + 1)] : nil, nil);
+    }];
 }
 
 + (KCHTTPTask *)topStreamsAfter:(NSString *)cursor completion:(KCListCompletion)completion
@@ -176,37 +222,47 @@ static const NSUInteger KCParallelChannels = 6;
 {
     KCHTTPTask *outer = [[KCHTTPTask alloc] init];
     if (!slugs.count) { KCMain(^{ completion(@[], nil); }); return outer; }
-    NSMutableArray *results = [NSMutableArray arrayWithCapacity:slugs.count];
-    for (NSUInteger i = 0; i < slugs.count; i++) [results addObject:[NSNull null]];
-    NSMutableArray *tasks = [NSMutableArray array];
-    __block NSUInteger next = 0, running = 0, done = 0;
-    __block NSError *failure = nil;
-    __block void (^startMore)(void);
-    startMore = ^{
-        while (running < KCParallelChannels && next < slugs.count) {
-            NSUInteger index = next++;
-            running++;
-            KCHTTPTask *t = [self channel:slugs[index] completion:^(KCChannel *channel, NSError *error) {
-                if (outer.isCancelled) { startMore = nil; return; }
-                running--;
-                done++;
-                if (channel) results[index] = channel;
-                else if (error && error.code != 404) failure = error;
-                if (done == slugs.count) {
-                    NSMutableArray *found = [NSMutableArray array];
-                    for (id r in results) if ([r isKindOfClass:[KCChannel class]]) [found addObject:r];
-                    completion(found, found.count ? nil : failure);
-                    startMore = nil;
-                    return;
-                }
-                if (startMore) startMore();
-            }];
-            if (t) [tasks addObject:t];
-        }
+    KCChannelBatch *batch = [[KCChannelBatch alloc] init];
+    batch.outer = outer;
+    batch.slugs = slugs;
+    batch.results = [NSMutableArray arrayWithCapacity:slugs.count];
+    for (NSUInteger i = 0; i < slugs.count; i++) [batch.results addObject:[NSNull null]];
+    batch.tasks = [NSMutableArray array];
+    batch.completion = completion;
+    // (the requests' blocks keep the batch alive; the caller's task only reaches it weakly)
+    __weak KCChannelBatch *weakBatch = batch;
+    outer.cancelBlock = ^{
+        KCChannelBatch *b = weakBatch;
+        for (KCHTTPTask *t in [b.tasks copy]) [t cancel];
+        [b.tasks removeAllObjects];
     };
-    outer.cancelBlock = ^{ for (KCHTTPTask *t in tasks) [t cancel]; startMore = nil; };
-    startMore();
+    [self startChannelsIn:batch];
     return outer;
+}
+
++ (void)startChannelsIn:(KCChannelBatch *)batch
+{
+    while (batch.running < KCParallelChannels && batch.next < batch.slugs.count) {
+        NSUInteger index = batch.next;
+        batch.next = index + 1;
+        batch.running = batch.running + 1;
+        KCHTTPTask *t = [self channel:batch.slugs[index] completion:^(KCChannel *channel, NSError *error) {
+            if (batch.outer.isCancelled) return;
+            batch.running = batch.running - 1;
+            batch.done = batch.done + 1;
+            if (channel) batch.results[index] = channel;
+            else if (error && error.code != 404) batch.failure = error;
+            if (batch.done == batch.slugs.count) {
+                [batch.tasks removeAllObjects];   // (the tasks hold these blocks: no cycle once all have answered)
+                NSMutableArray *found = [NSMutableArray array];
+                for (id r in batch.results) if ([r isKindOfClass:[KCChannel class]]) [found addObject:r];
+                batch.completion(found, found.count ? nil : batch.failure);
+                return;
+            }
+            [self startChannelsIn:batch];
+        }];
+        if (t) [batch.tasks addObject:t];
+    }
 }
 
 + (KCHTTPTask *)videosForChannel:(NSString *)slug after:(NSString *)cursor completion:(KCListCompletion)completion
