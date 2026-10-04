@@ -6,13 +6,17 @@
 #   Get-IPadSyslog
 
 $script:IPadKey = Join-Path $env:USERPROFILE '.ssh\ipad_ios6'
-$script:IPadDefaultHost = '192.168.137.17'
+$script:IPadDefaultHost = ''   # (the address lives in tools/local.json, never in the repository)
 $script:IPadLocalCfg = Join-Path $PSScriptRoot 'local.json'
 if (Test-Path $script:IPadLocalCfg) {
     try {
         $c = Get-Content $script:IPadLocalCfg -Raw | ConvertFrom-Json
         if ($c.ipad) { $script:IPadDefaultHost = $c.ipad }
     } catch {}
+}
+
+function Assert-IPadHost([string]$IPadHost) {
+    if (-not $IPadHost) { throw "No iPad address: set `"ipad`" in tools/local.json or pass -IPadHost" }
 }
 
 function Get-IPadSshArgs {
@@ -24,6 +28,7 @@ function Get-IPadSshArgs {
 # Runs a command on the iPad and returns stdout+stderr as plain strings (never throws on stderr output).
 function Invoke-IPad {
     param([Parameter(Mandatory = $true)][string]$Command, [string]$IPadHost = $script:IPadDefaultHost)
+    Assert-IPadHost $IPadHost
     $ErrorActionPreference = 'Continue'   # function-local: native stderr must not become a terminating error
     $sshArgs = Get-IPadSshArgs
     & ssh.exe @sshArgs "root@$IPadHost" $Command 2>&1 |
@@ -32,6 +37,7 @@ function Invoke-IPad {
 
 function Copy-ToIPad {
     param([Parameter(Mandatory = $true)][string]$LocalPath, [Parameter(Mandatory = $true)][string]$RemotePath, [string]$IPadHost = $script:IPadDefaultHost)
+    Assert-IPadHost $IPadHost
     $ErrorActionPreference = 'Continue'
     $sshArgs = Get-IPadSshArgs
     & scp.exe -O @sshArgs $LocalPath "root@${IPadHost}:$RemotePath" 2>&1 |
@@ -41,6 +47,7 @@ function Copy-ToIPad {
 
 function Copy-FromIPad {
     param([Parameter(Mandatory = $true)][string]$RemotePath, [Parameter(Mandatory = $true)][string]$LocalPath, [string]$IPadHost = $script:IPadDefaultHost)
+    Assert-IPadHost $IPadHost
     $ErrorActionPreference = 'Continue'
     $sshArgs = Get-IPadSshArgs
     & scp.exe -O @sshArgs -r "root@${IPadHost}:$RemotePath" $LocalPath 2>&1 |

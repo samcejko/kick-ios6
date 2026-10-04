@@ -5,9 +5,7 @@ TARGET := iphone:clang:9.3:6.0
 ARCHS := armv7
 DEBUG ?= 0
 
-# Device used by `make install` (Theos) - overridden by tools/ipad.ps1 anyway
-THEOS_DEVICE_IP ?= 192.168.137.17
-THEOS_DEVICE_USER ?= root
+# (installing goes through tools/ipad.ps1 with the device address from tools/local.json)
 
 include $(THEOS)/makefiles/common.mk
 
