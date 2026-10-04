@@ -1019,9 +1019,10 @@ static const NSTimeInterval KCReplayLead = 20;             // the replay is fetc
 
 - (void)replaceWithPlayer:(KCPlayerViewController *)player
 {
-    UIViewController *presenter = self.presentingViewController;
+    UIViewController *presenter = self.presentingViewController ?: [UIApplication sharedApplication].keyWindow.rootViewController;
     [self teardownPlayback];
-    [self dismissViewControllerAnimated:NO completion:^{
+    // (dismissed from below: that closes this player together with whatever it showed on top, a channel page)
+    [presenter dismissViewControllerAnimated:NO completion:^{
         player.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
         [presenter presentViewController:player animated:YES completion:nil];
     }];

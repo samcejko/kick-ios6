@@ -13,14 +13,27 @@
     return top;
 }
 
+// The player somewhere in the chain of presented screens (a channel page may lie over it), nil when none
++ (KCPlayerViewController *)activePlayer
+{
+    UIViewController *vc = [UIApplication sharedApplication].keyWindow.rootViewController;
+    while (vc) {
+        if ([vc isKindOfClass:[KCPlayerViewController class]] && !vc.isBeingDismissed) return (KCPlayerViewController *)vc;
+        vc = vc.presentedViewController;
+    }
+    return nil;
+}
+
 + (void)presentPlayer:(KCPlayerViewController *)player from:(UIViewController *)controller
 {
-    UIViewController *presenter = [self presenterFrom:controller];
-    if ([presenter isKindOfClass:[KCPlayerViewController class]]) {
-        // already watching something: the new content replaces it in the same screen
-        [(KCPlayerViewController *)presenter replaceWithPlayer:player];
+    KCPlayerViewController *current = [self activePlayer];
+    if (current) {
+        // already watching something (maybe under a channel page): the new content takes its place, never a second
+        // player playing alongside
+        [current replaceWithPlayer:player];
         return;
     }
+    UIViewController *presenter = [self presenterFrom:controller];
     player.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
     [presenter presentViewController:player animated:YES completion:nil];
 }

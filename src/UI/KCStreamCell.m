@@ -462,7 +462,8 @@ static const CGFloat kRowThumbWidth = 128;
         self.liveDot.hidden = NO;
         self.liveDot.image = [t liveDotImage];
         NSString *category = channel.stream.categoryName.length ? channel.stream.categoryName : L(@"Live");
-        self.detailLabel.text = [NSString stringWithFormat:@"%@ · %@", category, [KCUtils formatViewers:channel.stream.viewers]];
+        // (search results only say that a channel is live, without its viewers)
+        self.detailLabel.text = channel.stream.viewers > 0 ? [NSString stringWithFormat:@"%@ · %@", category, [KCUtils formatViewers:channel.stream.viewers]] : category;
         self.detailLabel.textColor = [t primaryTextColor];
     } else {
         self.liveDot.hidden = YES;

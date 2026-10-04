@@ -1,5 +1,6 @@
 #import "KCModels.h"
 #import "KCCommon.h"
+#import "KCUtils.h"
 
 #pragma mark - Pictures
 
@@ -96,7 +97,7 @@ static NSString *KCNameForDisplay(NSString *displayName, NSString *slug)
     NSDictionary *user = KCDict(channel[@"user"]);
     KCStream *s = [[KCStream alloc] init];
     s.streamId = KCStr(item[@"id"]);
-    s.title = KCStr(item[@"session_title"]);
+    s.title = [KCUtils displayText:KCStr(item[@"session_title"])];
     s.slug = [KCStr(channel[@"slug"]) lowercaseString];
     s.displayName = KCStr(user[@"username"]) ?: KCStr(channel[@"slug"]);
     s.userId = KCStr(channel[@"id"]) ?: KCStr(item[@"channel_id"]);
@@ -113,7 +114,7 @@ static NSString *KCNameForDisplay(NSString *displayName, NSString *slug)
     NSDictionary *user = KCDict(channel[@"user"]);
     KCStream *s = [[KCStream alloc] init];
     s.streamId = KCStr(live[@"id"]);
-    s.title = KCStr(live[@"session_title"]);
+    s.title = [KCUtils displayText:KCStr(live[@"session_title"])];
     s.slug = [KCStr(channel[@"slug"]) lowercaseString];
     s.displayName = KCStr(user[@"username"]) ?: KCStr(channel[@"slug"]);
     s.userId = KCStr(channel[@"id"]);
@@ -174,7 +175,7 @@ static NSString *KCNameForDisplay(NSString *displayName, NSString *slug)
     c.accountId = KCStr(ch[@"user_id"]) ?: KCStr(ch[@"userId"]);
     c.slug = [KCStr(ch[@"slug"]) lowercaseString];
     c.displayName = KCStr(user[@"username"]) ?: c.slug;
-    c.bio = KCStr(user[@"bio"]);
+    c.bio = [KCUtils displayText:KCStr(user[@"bio"])];
     c.avatarURL = KCAvatar(user);
     c.bannerURL = KCImageURL(ch[@"banner_image"], 1200);
     c.offlineImageURL = KCImageURL(ch[@"offline_banner_image"], 1200);
@@ -225,7 +226,7 @@ static NSString *KCNameForDisplay(NSString *displayName, NSString *slug)
     NSDictionary *channel = KCDict(item[@"channel"]);
     KCVideo *v = [[KCVideo alloc] init];
     v.videoId = KCStr(video[@"uuid"]) ?: KCStr(item[@"id"]);
-    v.title = KCStr(item[@"session_title"]);
+    v.title = [KCUtils displayText:KCStr(item[@"session_title"])];
     v.previewURL = KCImageURL(item[@"thumbnail"], 640) ?: KCStr(video[@"thumb"]);
     v.categoryName = KCStr(KCDict([KCArr(item[@"categories"]) firstObject])[@"name"]);
     v.sourceURL = KCStr(item[@"source"]);
@@ -252,7 +253,7 @@ static NSString *KCNameForDisplay(NSString *displayName, NSString *slug)
     NSDictionary *channel = KCDict(item[@"channel"]);
     KCClip *c = [[KCClip alloc] init];
     c.clipId = KCStr(item[@"id"]);
-    c.title = KCStr(item[@"title"]);
+    c.title = [KCUtils displayText:KCStr(item[@"title"])];
     c.thumbnailURL = KCStr(item[@"thumbnail_url"]);
     c.curatorName = KCStr(KCDict(item[@"creator"])[@"username"]);
     c.categoryName = KCStr(KCDict(item[@"category"])[@"name"]);
