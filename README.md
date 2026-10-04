@@ -23,7 +23,8 @@ for the extra emotes, to 7TV).
 - Past broadcasts with seeking, resume where you left off, and the chat replay in time with the video
 - Light and dark theme, English and Czech
 
-Version 0.1.0 targets the iPad 2 (iPad2,2) with iOS 6.1.3; the iPhone layout is implemented as well.
+Tested on an iPad 2 (iPad2,2) with iOS 6.1.3. The iPhone layout is implemented but has not been tried on a real
+iPhone yet.
 
 ## Installing on the device
 
