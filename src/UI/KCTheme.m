@@ -659,6 +659,7 @@ static UIImage *KCDrawImage(CGSize size, void (^draw)(CGContextRef ctx))
     tableView.backgroundColor = tableView.style != UITableViewStylePlain ? [self backgroundColor] : [self cardColor];
     tableView.separatorColor = [self separatorColor];
     tableView.indicatorStyle = self.dark ? UIScrollViewIndicatorStyleWhite : UIScrollViewIndicatorStyleDefault;
+    KCModernSetTableViewDark(tableView, [self isDark]);
 }
 
 - (void)styleCell:(UITableViewCell *)cell
