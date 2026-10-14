@@ -27,6 +27,7 @@
 @property (nonatomic, copy) NSString *channelId;
 @property (nonatomic, copy) NSString *channelSlug;
 @property (nonatomic) BOOL replayMode;                // a recording's chat (the lines carry their moment in the video)
+@property (nonatomic) UIEdgeInsets safeInsets;        // the home indicator (bottom) and the notch (left/right) on iOS 11+, else zero
 
 - (void)appendMessages:(NSArray *)messages;           // KCChatMessage
 - (void)appendNotice:(NSString *)text;

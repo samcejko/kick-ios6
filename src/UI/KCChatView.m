@@ -233,15 +233,24 @@ static const CGFloat KCChatCellPadH = 8;
     self.style = nil;
 }
 
+- (void)setSafeInsets:(UIEdgeInsets)safeInsets
+{
+    if (UIEdgeInsetsEqualToEdgeInsets(safeInsets, _safeInsets)) return;
+    _safeInsets = safeInsets;
+    [self setNeedsLayout];
+}
+
 - (void)layoutSubviews
 {
     [super layoutSubviews];
     CGRect b = self.bounds;
-    BOOL widthChanged = fabs(self.tableView.frame.size.width - b.size.width) > 0.5;
-    if (!CGRectEqualToRect(self.tableView.frame, b)) self.tableView.frame = b;
+    // (the lines keep clear of the notch and the home indicator of iOS 11+)
+    CGRect tableFrame = CGRectMake(self.safeInsets.left, 0, b.size.width - self.safeInsets.left - self.safeInsets.right, b.size.height - self.safeInsets.bottom);
+    BOOL widthChanged = fabs(self.tableView.frame.size.width - tableFrame.size.width) > 0.5;
+    if (!CGRectEqualToRect(self.tableView.frame, tableFrame)) self.tableView.frame = tableFrame;
     if (widthChanged) [self invalidateLayouts];
     CGSize pill = [self.moreMessagesButton.currentTitle sizeWithFont:self.moreMessagesButton.titleLabel.font];
-    self.moreMessagesButton.frame = CGRectMake(floor((b.size.width - pill.width - 24) / 2), b.size.height - 32, pill.width + 24, 24);
+    self.moreMessagesButton.frame = CGRectMake(tableFrame.origin.x + floor((tableFrame.size.width - pill.width - 24) / 2), CGRectGetMaxY(tableFrame) - 32, pill.width + 24, 24);
 }
 
 #pragma mark - Messages

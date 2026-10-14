@@ -1,6 +1,7 @@
 #import "KCTheme.h"
 #import "KCSettings.h"
 #import "KCUtils.h"
+#import "KCModern.h"
 #import "KCCommon.h"
 
 static UIColor *RGB(NSInteger r, NSInteger g, NSInteger b)
@@ -622,7 +623,8 @@ static UIImage *KCDrawImage(CGSize size, void (^draw)(CGContextRef ctx))
 #pragma mark - UIKit
 
 - (UIBarStyle)barStyle { return self.dark ? UIBarStyleBlack : UIBarStyleDefault; }
-- (UIStatusBarStyle)statusBarStyle { return self.dark ? UIStatusBarStyleBlackOpaque : UIStatusBarStyleDefault; }
+// (on iOS 7 and newer the status bar lies over the bar, which is dark in both looks: light text there)
+- (UIStatusBarStyle)statusBarStyle { return KCModernStatusBarStyle(self.dark ? UIStatusBarStyleBlackOpaque : UIStatusBarStyleDefault); }
 - (UIActivityIndicatorViewStyle)spinnerStyle { return self.dark ? UIActivityIndicatorViewStyleWhite : UIActivityIndicatorViewStyleGray; }
 
 - (void)applyToNavigationBar:(UINavigationBar *)bar
@@ -630,6 +632,7 @@ static UIImage *KCDrawImage(CGSize size, void (^draw)(CGContextRef ctx))
     bar.barStyle = [self barStyle];
     bar.translucent = NO;
     bar.tintColor = nil;
+    KCModernStyleNavigationBar(bar);   // iOS 7+: the glossy iOS 6 bar UIKit no longer draws
 }
 
 - (void)applyToToolbar:(UIToolbar *)bar
@@ -637,6 +640,7 @@ static UIImage *KCDrawImage(CGSize size, void (^draw)(CGContextRef ctx))
     bar.barStyle = [self barStyle];
     bar.translucent = NO;
     bar.tintColor = nil;
+    KCModernStyleToolbar(bar);
 }
 
 - (void)applyToTabBar:(UITabBar *)bar
@@ -644,12 +648,15 @@ static UIImage *KCDrawImage(CGSize size, void (^draw)(CGContextRef ctx))
     // (black glass in both looks; the selected tab lights up green instead of the system blue)
     bar.tintColor = self.dark ? RGB(14, 16, 17) : nil;
     bar.selectedImageTintColor = RGB(83, 252, 24);
+    KCModernStyleTabBar(bar);          // iOS 7+: the same black glass, drawn by the app...
+    if (KCModernIOS()) bar.tintColor = RGB(83, 252, 24);   // ...where tintColor is the selected tab's colour
 }
 
 - (void)applyToTableView:(UITableView *)tableView
 {
     tableView.backgroundView = nil;
-    tableView.backgroundColor = tableView.style == UITableViewStyleGrouped ? [self backgroundColor] : [self cardColor];
+    // (grouped, or the inset grouped style iOS 13+ shows grouped tables in)
+    tableView.backgroundColor = tableView.style != UITableViewStylePlain ? [self backgroundColor] : [self cardColor];
     tableView.separatorColor = [self separatorColor];
     tableView.indicatorStyle = self.dark ? UIScrollViewIndicatorStyleWhite : UIScrollViewIndicatorStyleDefault;
 }
@@ -674,6 +681,7 @@ static UIImage *KCDrawImage(CGSize size, void (^draw)(CGContextRef ctx))
 {
     bar.barStyle = [self barStyle];
     bar.tintColor = nil;
+    KCModernStyleSearchBar(bar);
 }
 
 @end

@@ -7,6 +7,7 @@
 #import "KCSettings.h"
 #import "KCTheme.h"
 #import "KCUtils.h"
+#import "KCModern.h"
 #import "KCCommon.h"
 #include <dlfcn.h>
 #include <signal.h>
@@ -95,6 +96,8 @@ static BOOL KCPressView(UIView *v, NSString *text)
     signal(SIGPIPE, SIG_IGN);
     [KCSettings registerDefaults];
     KCLog(@"Kicker %@ starting on %@ (iOS %@)", [KCUtils appVersion], [KCUtils deviceModel], [UIDevice currentDevice].systemVersion);
+    // iOS 7 and newer (the arm64 build): the iOS 6 look of the bars, full-screen modals; nothing on iOS 6
+    KCModernSetUp([[KCTheme shared] barStyle]);
     [KCTLSSocket warmUp];
     [[KCImageLoader shared] pruneDisk];
     [KCImageLoader shared].animationAllowed = [KCSettings animatedEmotes];

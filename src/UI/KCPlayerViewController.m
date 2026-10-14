@@ -12,6 +12,7 @@
 #import "KCSettings.h"
 #import "KCTheme.h"
 #import "KCUtils.h"
+#import "KCModern.h"
 #import "KCCommon.h"
 #import <AVFoundation/AVFoundation.h>
 #import <MediaPlayer/MPNowPlayingInfoCenter.h>
@@ -67,6 +68,7 @@ static const NSTimeInterval KCReplayLead = 20;             // the replay is fetc
 @property (nonatomic, strong) KCChatView *chatView;
 @property (nonatomic) BOOL fullscreen;
 @property (nonatomic) BOOL chatVisible;
+@property (nonatomic) BOOL statusBarHiddenByPlayer;   // full screen, or an iPhone turned sideways
 // live chat
 @property (nonatomic, strong) KCChat *chat;
 @property (nonatomic, strong) KCHTTPTask *historyTask;
@@ -211,37 +213,62 @@ static const NSTimeInterval KCReplayLead = 20;             // the replay is fetc
     return YES;
 }
 
+- (BOOL)wantsStatusBarHiddenInOrientation:(UIInterfaceOrientation)orientation
+{
+    return self.fullscreen || (!KCIsPad() && UIInterfaceOrientationIsLandscape(orientation));
+}
+
+// The room the controls leave at the top: the status bar (20 on iOS 6), or the notch on iOS 11+ (also when the
+// status bar is hidden)
+- (CGFloat)currentTopInset
+{
+    return KCModernTopInset(self.view, self.statusBarHiddenByPlayer ? 0 : 20);
+}
+
 - (void)updateStatusBar
 {
     UIApplication *app = [UIApplication sharedApplication];
-    BOOL hide = self.fullscreen || (!KCIsPad() && UIInterfaceOrientationIsLandscape(self.interfaceOrientation));
+    BOOL hide = [self wantsStatusBarHiddenInOrientation:self.interfaceOrientation];
+    self.statusBarHiddenByPlayer = hide;
     [app setStatusBarHidden:hide withAnimation:UIStatusBarAnimationFade];
     if (!hide) [app setStatusBarStyle:UIStatusBarStyleBlackOpaque animated:NO];
-    self.playerView.topInset = hide ? 0 : 20;
+    KCModernStatusBarChanged(self);   // iOS 7+ asks prefersStatusBarHidden instead
+    self.playerView.topInset = [self currentTopInset];
     [self.view setNeedsLayout];
 }
+
+// iOS 7 and newer (never called on iOS 6)
+- (BOOL)prefersStatusBarHidden { return self.statusBarHiddenByPlayer; }
+- (UIStatusBarStyle)preferredStatusBarStyle { return KCModernStatusBarStyle(UIStatusBarStyleBlackOpaque); }
 
 - (void)viewWillLayoutSubviews
 {
     [super viewWillLayoutSubviews];
     CGRect b = self.view.bounds;
+    UIEdgeInsets safe = KCSafeAreaInsets(self.view);   // the notch and the home indicator (iOS 11+), else zero
+    self.playerView.topInset = [self currentTopInset];
     BOOL showChat = self.chatVisible && self.chatView && !self.fullscreen;
     self.chatView.hidden = !showChat;
     if (!showChat) {
         self.playerView.frame = b;
+        self.playerView.safeInsets = UIEdgeInsetsMake(0, safe.left, safe.bottom, safe.right);
         return;
     }
     BOOL landscape = b.size.width > b.size.height;
     CGFloat top = self.playerView.topInset;   // (the status bar, when it shows)
     if (landscape) {
-        CGFloat chatW = KCIsPad() ? 340 : 190;
+        CGFloat chatW = (KCIsPad() ? 340 : 190) + safe.right;
         self.playerView.frame = CGRectMake(0, 0, b.size.width - chatW, b.size.height);
+        self.playerView.safeInsets = UIEdgeInsetsMake(0, safe.left, safe.bottom, 0);
         self.chatView.frame = CGRectMake(b.size.width - chatW, top, chatW, b.size.height - top);
+        self.chatView.safeInsets = UIEdgeInsetsMake(0, 0, safe.bottom, safe.right);
     } else {
         CGFloat videoH = floor(b.size.width * 9.0 / 16.0) + top;
         if (KCIsPad()) videoH = MAX(videoH, floor(b.size.height * 0.5));
         self.playerView.frame = CGRectMake(0, 0, b.size.width, videoH);
+        self.playerView.safeInsets = UIEdgeInsetsMake(0, safe.left, 0, safe.right);
         self.chatView.frame = CGRectMake(0, videoH, b.size.width, b.size.height - videoH);
+        self.chatView.safeInsets = UIEdgeInsetsMake(0, safe.left, safe.bottom, safe.right);
     }
 }
 
@@ -249,9 +276,11 @@ static const NSTimeInterval KCReplayLead = 20;             // the replay is fetc
 {
     [super willAnimateRotationToInterfaceOrientation:toInterfaceOrientation duration:duration];
     UIApplication *app = [UIApplication sharedApplication];
-    BOOL hide = self.fullscreen || (!KCIsPad() && UIInterfaceOrientationIsLandscape(toInterfaceOrientation));
+    BOOL hide = [self wantsStatusBarHiddenInOrientation:toInterfaceOrientation];
+    self.statusBarHiddenByPlayer = hide;
     [app setStatusBarHidden:hide withAnimation:UIStatusBarAnimationNone];
-    self.playerView.topInset = hide ? 0 : 20;
+    KCModernStatusBarChanged(self);
+    self.playerView.topInset = [self currentTopInset];
     [self.view setNeedsLayout];
     [self.view layoutIfNeeded];
 }
