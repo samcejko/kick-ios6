@@ -1,5 +1,6 @@
 #import "KCSettingsViewController.h"
 #import "KCChoiceViewController.h"
+#import "KCExternalOpen.h"
 #import "KCSettings.h"
 #import "KCTheme.h"
 #import "KCTLSSocket.h"
@@ -119,7 +120,7 @@ typedef NS_ENUM(NSInteger, KCSettingsSection) {
         case KCSectionChat: return 6;
         case KCSectionAppearance: return 1;
         case KCSectionAdvanced: return 3;
-        case KCSectionAbout: return 4;
+        case KCSectionAbout: return 5;
         default: return 0;
     }
 }
@@ -232,9 +233,14 @@ typedef NS_ENUM(NSInteger, KCSettingsSection) {
             } else if (row == 2) {
                 cell.textLabel.text = L(@"Root certificates");
                 cell.detailTextLabel.text = [NSString stringWithFormat:@"%ld", (long)[KCTLSSocket caCertificateCount]];
-            } else {
+            } else if (row == 3) {
                 cell.textLabel.text = L(@"Device");
                 cell.detailTextLabel.text = [NSString stringWithFormat:@"%@ · iOS %@", [KCUtils deviceModel], [UIDevice currentDevice].systemVersion];
+            } else {
+                cell.textLabel.text = L(@"Support the development");
+                cell.detailTextLabel.text = @"ko-fi.com/samcejko";
+                cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+                cell.selectionStyle = UITableViewCellSelectionStyleBlue;
             }
             break;
         default:
@@ -300,6 +306,8 @@ typedef NS_ENUM(NSInteger, KCSettingsSection) {
         }];
     } else if (sec == KCSectionAdvanced && row == 2) {
         [self runConnectionTest];
+    } else if (sec == KCSectionAbout && row == 4) {
+        [KCExternalOpen presentOpenInForURL:[NSURL URLWithString:@"https://ko-fi.com/samcejko"] from:self anchor:[tableView cellForRowAtIndexPath:indexPath]];
     }
 }
 
