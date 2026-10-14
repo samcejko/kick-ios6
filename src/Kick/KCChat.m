@@ -10,8 +10,25 @@
 #include <errno.h>
 #include <string.h>
 
-// Kick's chat runs on Pusher; the app key is the one kick.com itself uses (public, part of the website)
-static NSString * const KCChatURL = @"wss://ws-us2.pusher.com/app/32cbd69e4b950bf97679?protocol=7&client=js&version=8.4.0&flash=false";
+// Kick's chat runs on Pusher; the app key is the one kick.com itself uses (public, part of the website). kick.com
+// changed it in October 2026 (the old one answers "App key not in this cluster", error 4001), so the keys we know
+// of are tried in turn: the newest first, the next one whenever Pusher reports the application unknown.
+static NSString * const KCChatAppKeys[] = { @"34bf7a0ff419a2a775b9", @"32cbd69e4b950bf97679" };
+static NSUInteger KCChatAppKeyIndex = 0;
+
+static NSString *KCChatURL(void)
+{
+    return [NSString stringWithFormat:@"wss://ws-us2.pusher.com/app/%@?protocol=7&client=js&version=8.4.0&flash=false",
+            KCChatAppKeys[KCChatAppKeyIndex]];
+}
+
+static void KCChatNextAppKey(void)
+{
+    NSUInteger count = sizeof(KCChatAppKeys) / sizeof(KCChatAppKeys[0]);
+    KCChatAppKeyIndex = (KCChatAppKeyIndex + 1) % count;
+    KCLog(@"Chat: switching to Pusher app key %@", KCChatAppKeys[KCChatAppKeyIndex]);
+}
+
 static NSString * const KCChatOrigin = @"https://kick.com";
 static const NSTimeInterval KCChatIdlePing = 60;         // our own ping when nothing came for this long (the server's limit is 120 s)
 static const NSTimeInterval KCChatIdleGiveUp = 150;      // ...and a new connection when still nothing
@@ -155,7 +172,7 @@ static NSDictionary *KCEventData(id data)
     KCWebSocket *socket = [[KCWebSocket alloc] init];
     self.socket = socket;
     NSString *agent = [NSString stringWithFormat:@"Kicker/%@ (iOS %@)", [KCUtils appVersion], [UIDevice currentDevice].systemVersion];
-    if (![socket connectToURL:[NSURL URLWithString:KCChatURL] origin:KCChatOrigin userAgent:agent verify:[KCSettings verifyTLS] error:error]) {
+    if (![socket connectToURL:[NSURL URLWithString:KCChatURL()] origin:KCChatOrigin userAgent:agent verify:[KCSettings verifyTLS] error:error]) {
         [socket close];
         self.socket = nil;
         return NO;
@@ -167,6 +184,10 @@ static NSDictionary *KCEventData(id data)
     NSTimeInterval batchStarted = 0;
     NSTimeInterval lastReceived = [NSDate timeIntervalSinceReferenceDate];
     BOOL subscribed = NO, pinged = NO, ok = YES;
+    // Why the error is kept here and handed out only after the loop: an object stored into `*error` inside the
+    // loop's autorelease pool is autoreleased into that pool, and the pool ends with every turn of the loop - the
+    // caller would get a dangling pointer (iOS 16 crashed on it in objc_retain; iOS 6 merely got lucky).
+    NSError *failure = nil;
 
     while (ok && generation == self.generation) {
         @autoreleasepool {
@@ -178,13 +199,13 @@ static NSDictionary *KCEventData(id data)
             }
             // silence from the server: our own ping, then a new connection
             if (now - lastReceived > KCChatIdleGiveUp) {
-                if (error) *error = KCMakeError(KCErrorTimeout, @"No data from the chat server");
+                failure = KCMakeError(KCErrorTimeout, @"No data from the chat server");
                 ok = NO;
                 break;
             }
             if (now - lastReceived > KCChatIdlePing && !pinged) {
                 pinged = YES;
-                if (![socket sendText:@"{\"event\":\"pusher:ping\",\"data\":{}}" error:error]) { ok = NO; break; }
+                if (![socket sendText:@"{\"event\":\"pusher:ping\",\"data\":{}}" error:&failure]) { ok = NO; break; }
             }
             // wait for data, a wake-up, or the batch deadline
             if (![socket hasPendingInput]) {
@@ -193,7 +214,7 @@ static NSDictionary *KCEventData(id data)
                 int r = poll(fds, _wakePipe[0] >= 0 ? 2 : 1, timeout);
                 if (r < 0) {
                     if (errno == EINTR) continue;
-                    if (error) *error = KCMakeError(KCErrorConnectionLost, @"poll failed");
+                    failure = KCMakeError(KCErrorConnectionLost, @"poll failed");
                     ok = NO;
                     break;
                 }
@@ -204,7 +225,7 @@ static NSDictionary *KCEventData(id data)
                     continue;
                 }
                 if (fds[0].revents & (POLLERR | POLLHUP | POLLNVAL)) {
-                    if (error) *error = KCMakeError(KCErrorConnectionLost, L(@"Connection lost."));
+                    failure = KCMakeError(KCErrorConnectionLost, L(@"Connection lost."));
                     ok = NO;
                     break;
                 }
@@ -224,7 +245,7 @@ static NSDictionary *KCEventData(id data)
                 NSDictionary *data = KCEventData(message[@"data"]);
                 if ([event isEqualToString:@"pusher:connection_established"]) {
                     NSDictionary *subscribe = @{ @"event": @"pusher:subscribe", @"data": @{ @"auth": @"", @"channel": channelName } };
-                    if (![socket sendText:KCJSONText(subscribe) error:error]) { ok = NO; break; }
+                    if (![socket sendText:KCJSONText(subscribe) error:&failure]) { ok = NO; break; }
                 } else if ([event isEqualToString:@"pusher_internal:subscription_succeeded"]) {
                     if (!subscribed) {
                         subscribed = YES;
@@ -232,9 +253,13 @@ static NSDictionary *KCEventData(id data)
                         [self setStateOnMain:KCChatStateConnected];
                     }
                 } else if ([event isEqualToString:@"pusher:ping"]) {
-                    if (![socket sendText:@"{\"event\":\"pusher:pong\",\"data\":{}}" error:error]) { ok = NO; break; }
+                    if (![socket sendText:@"{\"event\":\"pusher:pong\",\"data\":{}}" error:&failure]) { ok = NO; break; }
                 } else if ([event isEqualToString:@"pusher:error"]) {
                     KCLog(@"Chat %@: server error %@", self.channel, KCJSONText(data) ?: @"");
+                    // 4000-4099: the application is unknown here, i.e. kick.com moved to another Pusher key - the
+                    // next connection tries the next key we know of
+                    NSInteger code = KCInt(data[@"code"]);
+                    if (code >= 4000 && code <= 4099) KCChatNextAppKey();
                 } else {
                     KCChatMessage *m = [self handleEvent:event data:data];
                     if (m) {
@@ -245,12 +270,13 @@ static NSDictionary *KCEventData(id data)
             }
             if (!ok) break;
             if (closed) {
-                if (error) *error = readError ?: KCMakeError(KCErrorConnectionLost, L(@"The chat server closed the connection."));
+                failure = readError ?: KCMakeError(KCErrorConnectionLost, L(@"The chat server closed the connection."));
                 ok = NO;
                 break;
             }
         }
     }
+    if (!ok && error) *error = failure;
     if (batch.count) [self deliver:[batch copy]];
     [socket close];
     self.socket = nil;

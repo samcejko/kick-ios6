@@ -1052,6 +1052,7 @@ static const NSTimeInterval KCReplayLead = 20;             // the replay is fetc
     [self teardownPlayback];
     // (dismissed from below: that closes this player together with whatever it showed on top, a channel page)
     [presenter dismissViewControllerAnimated:NO completion:^{
+        player.modalPresentationStyle = UIModalPresentationFullScreen;   // (iOS 13 and newer would present a card)
         player.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
         [presenter presentViewController:player animated:YES completion:nil];
     }];
