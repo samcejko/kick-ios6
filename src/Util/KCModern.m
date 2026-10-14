@@ -470,7 +470,8 @@ static void KCApplyTabBarAppearance(UITabBar *bar)
 }
 #endif
 
-void KCModernApplyNavigationBarBackground(UINavigationBar *bar, UIImage *image, NSDictionary *titleAttributes)
+void KCModernApplyNavigationBarBackground(UINavigationBar *bar, UIImage *image, NSDictionary *titleAttributes,
+                                             UIImage *buttonImage, UIImage *buttonImageHighlighted, NSDictionary *buttonTitleAttributes)
 {
     if (!bar || !image || !KCModernIOS()) return;
     bar.translucent = NO;
@@ -483,6 +484,19 @@ void KCModernApplyNavigationBarBackground(UINavigationBar *bar, UIImage *image, 
         a.shadowColor = nil;
         a.shadowImage = nil;
         if (titleAttributes) a.titleTextAttributes = titleAttributes;
+        if (buttonImage || buttonTitleAttributes) {
+            for (UIBarButtonItemAppearance *b in @[ a.buttonAppearance, a.doneButtonAppearance, a.backButtonAppearance ]) {
+                if (buttonImage) {
+                    b.normal.backgroundImage = buttonImage;
+                    b.highlighted.backgroundImage = buttonImageHighlighted ?: buttonImage;
+                    b.disabled.backgroundImage = buttonImage;
+                }
+                if (buttonTitleAttributes) {
+                    b.normal.titleTextAttributes = buttonTitleAttributes;
+                    b.highlighted.titleTextAttributes = buttonTitleAttributes;
+                }
+            }
+        }
         KCSetNavigationBarAppearances(bar, a, a);
         return;
     }
@@ -491,6 +505,23 @@ void KCModernApplyNavigationBarBackground(UINavigationBar *bar, UIImage *image, 
     [bar setBackgroundImage:image forBarMetrics:(UIBarMetrics)1];
     [bar setShadowImage:KCClearImage(CGSizeMake(1, 1))];
     if (titleAttributes) [bar setTitleTextAttributes:titleAttributes];
+    // (the legacy button images come from the app's own UIBarButtonItem appearance; nothing more to do here)
+}
+
+UITextField *KCModernSearchBarTextField(UISearchBar *bar)
+{
+    if (!bar) return nil;
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 130000
+    if (KCAtLeast(13)) return bar.searchTextField;
+#endif
+    NSMutableArray *queue = [NSMutableArray arrayWithObject:bar];
+    while (queue.count) {
+        UIView *v = queue.firstObject;
+        [queue removeObjectAtIndex:0];
+        if ([v isKindOfClass:[UITextField class]]) return (UITextField *)v;
+        [queue addObjectsFromArray:v.subviews];
+    }
+    return nil;
 }
 
 void KCModernApplyTabBarBackground(UITabBar *bar, UIImage *image)
