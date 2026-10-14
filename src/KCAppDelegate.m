@@ -1,6 +1,8 @@
 #import "KCAppDelegate.h"
 #import "KCRootViewController.h"
 #import "KCNavigator.h"
+#import "KCExternalOpen.h"
+#import "KCLinks.h"
 #import "KCTLSSocket.h"
 #import "KCMediaProxy.h"
 #import "KCImageLoader.h"
@@ -115,8 +117,9 @@ static BOOL KCPressView(UIView *v, NSString *text)
 // a channel by its web address and kicker:search?q=<text> the search. Over SSH (uiopen) a few commands help checking
 // the app: kicker:snapshot and kicker:screen write tmp/screen.png, kicker:press?n=1 presses a button of the alert on
 // screen, press?title=Chat a button, segment, switch row or list row with that text, kicker:tab?n=1 switches the tab,
-// kicker:back pops the current page and kicker:stats logs the memory in use. The commands need a file named "debug"
-// in the app's Documents folder.
+// kicker:back pops the current page, kicker:stats logs the memory in use and kicker:link?url=<address> does what a
+// tap on that address in a text does (&share=1: what holding it does). The commands need a file named "debug" in
+// the app's Documents folder.
 - (BOOL)application:(UIApplication *)application openURL:(NSURL *)url sourceApplication:(NSString *)sourceApplication annotation:(id)annotation
 {
     NSString *s = url.absoluteString ?: @"";
@@ -142,16 +145,10 @@ static BOOL KCPressView(UIView *v, NSString *text)
         return YES;
     }
     if ([target isEqualToString:@"open"] && [params[@"url"] length]) {
-        // a kick.com address: its first path component is the channel ("https://kick.com/xqc", "kick.com/xqc/videos")
-        NSString *address = params[@"url"];
-        if ([address rangeOfString:@"://"].location == NSNotFound) address = [@"https://" stringByAppendingString:address];
-        NSURL *web = [NSURL URLWithString:address];
-        NSArray *parts = [web.path componentsSeparatedByString:@"/"];
-        NSString *slug = parts.count > 1 ? [parts[1] lowercaseString] : nil;
-        BOOL kick = [[web.host lowercaseString] hasSuffix:@"kick.com"];
-        if (kick && slug.length && ![@[ @"category", @"categories", @"search", @"browse", @"following" ] containsObject:slug]) {
-            [self.rootViewController openChannelSlug:slug watch:NO];
-        }
+        // a kick.com address: its first path component is the channel ("https://kick.com/xqc", "kick.com/xqc/videos");
+        // the same reading serves the links tapped in texts (KCNavigator, KCExternalOpen)
+        NSString *slug = [KCNavigator channelSlugInKickURL:[KCLinks URLForLinkText:params[@"url"]]];
+        if (slug.length) [self.rootViewController openChannelSlug:slug watch:NO];
         return YES;
     }
     if ([target isEqualToString:@"search"] && [params[@"q"] length]) {
@@ -160,6 +157,17 @@ static BOOL KCPressView(UIView *v, NSString *text)
     }
     BOOL debug = [[NSFileManager defaultManager] fileExistsAtPath:[[KCUtils documentsPath] stringByAppendingPathComponent:@"debug"]];
     if (!debug) return YES;
+    if ([target isEqualToString:@"link"] && [params[@"url"] length]) {
+        // kicker:link?url=<percent-encoded address>: exactly what a tap on that address in a text does (kick.com inside
+        // the app, YouTube/Twitch/TikTok to a sister app, the browser chooser on iOS 6); link?url=…&share=1 what
+        // pressing and holding an address in the chat does (the share sheet)
+        BOOL share = [params[@"share"] boolValue];
+        UIViewController *top = [KCNavigator presenterFrom:nil];
+        if (share) [KCExternalOpen presentShareSheetForURL:[KCLinks URLForLinkText:params[@"url"]] from:top anchor:nil];
+        else [KCExternalOpen openLink:params[@"url"] from:top anchor:nil];
+        KCLog(@"Link %@: %@ (sister app: %@)", share ? @"share" : @"open", params[@"url"], [KCExternalOpen sisterAppNameForURL:[KCLinks URLForLinkText:params[@"url"]]] ?: @"none");
+        return YES;
+    }
     if ([target isEqualToString:@"stats"]) {
         struct task_basic_info info;
         mach_msg_type_number_t count = TASK_BASIC_INFO_COUNT;

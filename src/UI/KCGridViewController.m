@@ -1,6 +1,8 @@
 #import "KCGridViewController.h"
 #import "KCStreamCell.h"
 #import "KCNavigator.h"
+#import "KCExternalOpen.h"
+#import "KCLinks.h"
 #import "KCTheme.h"
 #import "KCUtils.h"
 #import "KCModern.h"
@@ -89,6 +91,10 @@ static NSString * const kFooterId = @"footer";
     [self.collectionView registerClass:[KCCategoryCell class] forCellWithReuseIdentifier:[KCCategoryCell reuseIdentifier]];
     [self.collectionView registerClass:[KCGridFooterView class] forSupplementaryViewOfKind:UICollectionElementKindSectionFooter withReuseIdentifier:kFooterId];
     [self.view addSubview:self.collectionView];
+    // (a tap opens the stream; pressing and holding a cell opens the web addresses in its title)
+    UILongPressGestureRecognizer *press = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(cellPressed:)];
+    press.minimumPressDuration = 0.5;
+    [self.collectionView addGestureRecognizer:press];
 
     self.refreshControl = [[UIRefreshControl alloc] init];
     [self.refreshControl addTarget:self action:@selector(pulled) forControlEvents:UIControlEventValueChanged];
@@ -404,6 +410,18 @@ static NSString * const kFooterId = @"footer";
     if ([item isKindOfClass:[KCStream class]]) [KCNavigator openStream:item from:self];
     else if ([item isKindOfClass:[KCChannel class]]) [KCNavigator openChannelSlug:[(KCChannel *)item slug] from:self];
     else if ([item isKindOfClass:[KCCategory class]]) [KCNavigator openCategory:item from:self];
+}
+
+- (void)cellPressed:(UILongPressGestureRecognizer *)gesture
+{
+    if (gesture.state != UIGestureRecognizerStateBegan) return;
+    NSIndexPath *ip = [self.collectionView indexPathForItemAtPoint:[gesture locationInView:self.collectionView]];
+    if (!ip || (NSUInteger)ip.item >= self.mutableItems.count) return;
+    id item = self.mutableItems[(NSUInteger)ip.item];
+    NSString *title = nil;
+    if ([item isKindOfClass:[KCStream class]]) title = [(KCStream *)item title];
+    else if ([item isKindOfClass:[KCChannel class]]) title = [(KCChannel *)item stream].title;
+    [KCExternalOpen openLinks:[KCLinks urlsInText:title] from:self anchor:[self.collectionView cellForItemAtIndexPath:ip]];
 }
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView

@@ -1,6 +1,8 @@
 #import "KCVideoListViewController.h"
 #import "KCStreamCell.h"
 #import "KCNavigator.h"
+#import "KCExternalOpen.h"
+#import "KCLinks.h"
 #import "KCTheme.h"
 #import "KCUtils.h"
 #import "KCCommon.h"
@@ -49,6 +51,10 @@
     [self.tableView registerClass:[KCVideoCell class] forCellReuseIdentifier:[KCVideoCell reuseIdentifier]];
     self.refreshControl = [[UIRefreshControl alloc] init];
     [self.refreshControl addTarget:self action:@selector(reload) forControlEvents:UIControlEventValueChanged];
+    // (a tap opens the video; pressing and holding a row opens the web addresses in its title)
+    UILongPressGestureRecognizer *press = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(rowPressed:)];
+    press.minimumPressDuration = 0.5;
+    [self.tableView addGestureRecognizer:press];
 
     self.messageLabel = [[UILabel alloc] initWithFrame:CGRectZero];
     self.messageLabel.backgroundColor = [UIColor clearColor];
@@ -224,6 +230,18 @@
 - (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath
 {
     if (self.hasMore && !self.loading && indexPath.row >= (NSInteger)self.mutableItems.count - 4) [self loadMore];
+}
+
+- (void)rowPressed:(UILongPressGestureRecognizer *)gesture
+{
+    if (gesture.state != UIGestureRecognizerStateBegan) return;
+    NSIndexPath *ip = [self.tableView indexPathForRowAtPoint:[gesture locationInView:self.tableView]];
+    if (!ip || (NSUInteger)ip.row >= self.mutableItems.count) return;
+    id item = self.mutableItems[(NSUInteger)ip.row];
+    NSString *title = nil;
+    if ([item isKindOfClass:[KCClip class]]) title = [(KCClip *)item title];
+    else if ([item isKindOfClass:[KCVideo class]]) title = [(KCVideo *)item title];
+    [KCExternalOpen openLinks:[KCLinks urlsInText:title] from:self anchor:[self.tableView cellForRowAtIndexPath:ip]];
 }
 
 @end

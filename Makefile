@@ -60,9 +60,10 @@ after-stage::
 	python3 "$(THEOS_PROJECT_DIR)/tools/modern_bundle.py" "$(KICKER_STAGED_APP)"
 	ldid -S"$(THEOS_PROJECT_DIR)/entitlements-arm64.xml" "$(KICKER_STAGED_BIN)"
 # The .deb is for rootless jailbreaks (iOS 15 and newer; Theos sets Architecture: iphoneos-arm64 and the /var/jb
-# prefix itself) and tells the home screen about the app when installed or removed.
+# prefix itself) and tells the home screen about the app when installed or removed. (The control file's own
+# Depends line bounds the 32-bit package to iOS 6-10.)
 before-package::
-	sed -i -e 's/^Depends: firmware (>= 6.0)/Depends: firmware (>= 15.0)/' "$(THEOS_STAGING_DIR)/DEBIAN/control"
+	sed -i -e 's/^Depends: .*/Depends: firmware (>= 15.0)/' "$(THEOS_STAGING_DIR)/DEBIAN/control"
 	printf '%s\n' '#!/bin/sh' '[ "$$1" = configure ] || exit 0' \
 		'command -v uicache >/dev/null 2>&1 && { uicache -p /var/jb/Applications/Kicker.app >/dev/null 2>&1 || uicache -a >/dev/null 2>&1; }' \
 		'exit 0' > "$(THEOS_STAGING_DIR)/DEBIAN/postinst"

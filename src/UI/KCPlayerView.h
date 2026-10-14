@@ -13,6 +13,8 @@
 - (void)playerView:(KCPlayerView *)view didSeekToFraction:(double)fraction;    // videos and clips
 - (void)playerView:(KCPlayerView *)view didSkipSeconds:(double)seconds;        // -10 / +10
 - (void)playerViewDidTapGoLive:(KCPlayerView *)view;                            // live: back to the live edge
+@optional
+- (void)playerViewDidTapTitle:(KCPlayerView *)view fromView:(UIView *)anchor;   // the title has a web address in it
 @end
 
 // The video (AVPlayerLayer) with the controls drawn over it: a top bar with the title and the quality, a bottom bar

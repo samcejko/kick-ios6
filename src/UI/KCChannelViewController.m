@@ -3,6 +3,8 @@
 #import "KCFavorites.h"
 #import "KCImageLoader.h"
 #import "KCNavigator.h"
+#import "KCExternalOpen.h"
+#import "KCLinks.h"
 #import "KCTheme.h"
 #import "KCUtils.h"
 #import "KCCommon.h"
@@ -27,6 +29,7 @@ typedef NS_ENUM(NSInteger, KCChannelTab) {
 @property (nonatomic, strong) UILabel *followersLabel;
 @property (nonatomic, strong) UILabel *statusLabel;
 @property (nonatomic, strong) UILabel *bioLabel;
+@property (nonatomic, strong) NSMutableArray *socialButtons;   // UIButton per entry of channel.socialLinks (the tag is the index)
 @property (nonatomic, strong) UIButton *watchButton;
 @property (nonatomic, strong) UIButton *favoriteButton;
 @property (nonatomic, strong) UIView *segmentBar;
@@ -124,6 +127,13 @@ typedef NS_ENUM(NSInteger, KCChannelTab) {
     self.bioLabel.numberOfLines = 0;
     [self.header addSubview:self.bioLabel];
 
+    // web addresses in the live title and the description open on a tap (one straight away, several from a sheet)
+    self.statusLabel.userInteractionEnabled = YES;
+    [self.statusLabel addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(statusTapped)]];
+    self.bioLabel.userInteractionEnabled = YES;
+    [self.bioLabel addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(bioTapped)]];
+    self.socialButtons = [NSMutableArray array];
+
     self.watchButton = [UIButton buttonWithType:UIButtonTypeCustom];
     self.watchButton.titleLabel.font = [UIFont boldSystemFontOfSize:15];
     self.watchButton.titleLabel.shadowOffset = CGSizeMake(0, 1);
@@ -181,6 +191,8 @@ typedef NS_ENUM(NSInteger, KCChannelTab) {
     self.segmentBar.backgroundColor = t.isDark ? [UIColor colorWithWhite:0.12 alpha:0.97] : [UIColor colorWithWhite:0.93 alpha:0.97];
     [self.periodButton setTitleColor:[t accentColor] forState:UIControlStateNormal];
     [self updateFavoriteButton];
+    // (the texts carry the link colour of the theme: laid out again)
+    if (self.channel) [self showChannel];
 }
 
 - (void)layoutHeader
@@ -224,6 +236,17 @@ typedef NS_ENUM(NSInteger, KCChannelTab) {
     CGFloat bioH = bio.length ? MIN(80, ceil([bio sizeWithFont:self.bioLabel.font constrainedToSize:CGSizeMake(textW, 80) lineBreakMode:NSLineBreakByWordWrapping].height)) : 0;
     self.bioLabel.frame = CGRectMake(pad, y, textW, bioH);
     y += bioH ? bioH + 6 : 0;
+    if (self.socialButtons.count) {
+        // the channel's social links in a row, going on in the next one when the row is full
+        CGFloat x = pad, rowY = y, rowH = 24;
+        for (UIButton *b in self.socialButtons) {
+            CGFloat bw = ceil([b.currentTitle sizeWithFont:b.titleLabel.font].width) + 2;
+            if (x > pad && x + bw > pad + textW) { x = pad; rowY += rowH; }
+            b.frame = CGRectMake(x, rowY, bw, rowH);
+            x += bw + 16;
+        }
+        y = rowY + rowH + 4;
+    }
     y += 6;
     if (fabs(self.header.frame.size.height - y) > 0.5 || fabs(self.header.frame.size.width - w) > 0.5) {
         self.header.frame = CGRectMake(0, 0, w, y);
@@ -275,20 +298,49 @@ typedef NS_ENUM(NSInteger, KCChannelTab) {
     NSString *banner = c.bannerURL.length ? c.bannerURL : c.offlineImageURL;
     [self.banner setImageURL:banner.length ? banner : nil placeholder:nil];
     if (!banner.length) self.banner.image = nil;
+    // (the labels take their style before their text: a label takes the style of an attributed text's start, and
+    // a title or a description beginning with an address would leave the link colour behind)
+    NSString *status;
     if (c.stream) {
         NSString *category = c.stream.categoryName.length ? [NSString stringWithFormat:@" · %@", c.stream.categoryName] : @"";
-        self.statusLabel.text = [NSString stringWithFormat:@"%@ %@%@\n%@", L(@"LIVE:"), c.stream.title.length ? c.stream.title : L(@"Live now"), category, [KCUtils formatViewers:c.stream.viewers]];
+        status = [NSString stringWithFormat:@"%@ %@%@\n%@", L(@"LIVE:"), c.stream.title.length ? c.stream.title : L(@"Live now"), category, [KCUtils formatViewers:c.stream.viewers]];
         self.statusLabel.textColor = [t primaryTextColor];
         self.watchButton.hidden = NO;
         [self.watchButton setTitle:L(@"Watch Live") forState:UIControlStateNormal];
     } else {
-        self.statusLabel.text = c.lastCategoryName.length ? [NSString stringWithFormat:L(@"Offline · lately %@"), c.lastCategoryName] : L(@"Offline");
+        status = c.lastCategoryName.length ? [NSString stringWithFormat:L(@"Offline · lately %@"), c.lastCategoryName] : L(@"Offline");
         self.statusLabel.textColor = [t secondaryTextColor];
         self.watchButton.hidden = YES;
     }
-    self.bioLabel.text = c.bio;
+    // web addresses in the live title and in the description show in the link colour (a tap opens them)
+    [KCLinks showText:status inLabel:self.statusLabel linkColor:[t linkColor] lineBreakMode:NSLineBreakByTruncatingTail];
+    self.bioLabel.textColor = [t secondaryTextColor];
+    [KCLinks showText:c.bio inLabel:self.bioLabel linkColor:[t linkColor] lineBreakMode:NSLineBreakByWordWrapping];
+    [self showSocialLinks:c.socialLinks];
     [self updateFavoriteButton];
     [self layoutHeader];
+}
+
+// The channel's Instagram, Twitter, YouTube… as a row of links under the description
+- (void)showSocialLinks:(NSArray *)links
+{
+    KCTheme *t = [KCTheme shared];
+    for (UIButton *b in self.socialButtons) [b removeFromSuperview];
+    [self.socialButtons removeAllObjects];
+    for (NSUInteger i = 0; i < links.count; i++) {
+        NSArray *link = links[i];
+        if (link.count < 2) continue;
+        UIButton *b = [UIButton buttonWithType:UIButtonTypeCustom];
+        b.titleLabel.font = [UIFont boldSystemFontOfSize:13];
+        [b setTitle:L(link[0]) forState:UIControlStateNormal];
+        [b setTitleColor:[t linkColor] forState:UIControlStateNormal];
+        [b setTitleColor:[t secondaryTextColor] forState:UIControlStateHighlighted];
+        b.accessibilityHint = link[1];
+        b.tag = (NSInteger)i;
+        [b addTarget:self action:@selector(socialTapped:) forControlEvents:UIControlEventTouchUpInside];
+        [self.header addSubview:b];
+        [self.socialButtons addObject:b];
+    }
 }
 
 - (void)updateFavoriteButton
@@ -321,6 +373,26 @@ typedef NS_ENUM(NSInteger, KCChannelTab) {
     if ([f contains:self.slug]) [f remove:self.slug];
     else [f add:self.slug displayName:self.channel.displayName ?: self.slug avatarURL:self.channel.avatarURL];
     [self updateFavoriteButton];
+}
+
+// The web addresses in the live title / the description: one opens, several are listed first (nothing when none)
+- (void)statusTapped
+{
+    [KCExternalOpen openLinks:[KCLinks urlsInText:self.channel.stream.title] from:self anchor:self.statusLabel];
+}
+
+- (void)bioTapped
+{
+    [KCExternalOpen openLinks:[KCLinks urlsInText:self.channel.bio] from:self anchor:self.bioLabel];
+}
+
+- (void)socialTapped:(UIButton *)button
+{
+    NSArray *links = self.channel.socialLinks;
+    if (button.tag < 0 || (NSUInteger)button.tag >= links.count) return;
+    NSArray *link = links[(NSUInteger)button.tag];
+    // (the same path as a tapped link: YouTube and TikTok profiles go to Tubie and TikTak when installed)
+    [KCExternalOpen openLink:link[1] from:self anchor:button];
 }
 
 - (void)segmentChanged

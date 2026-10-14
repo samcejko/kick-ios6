@@ -54,6 +54,7 @@
 @property (nonatomic, copy) NSString *chatroomId;       // where its live chat is
 @property (nonatomic, copy) NSString *playbackURL;      // the live stream's HLS master (carries its own token)
 @property (nonatomic, copy) NSString *lastCategoryName;
+@property (nonatomic, strong) NSArray *socialLinks;     // @[ @[network name, address] ]: the Instagram, Twitter, YouTube, Discord, TikTok, Facebook the channel gives
 @property (nonatomic, strong) KCStream *stream;         // nil when offline
 @property (nonatomic) NSInteger followers;
 @property (nonatomic) BOOL isVerified;

@@ -3,6 +3,7 @@
 #import "KCImageLoader.h"
 #import "KCTheme.h"
 #import "KCUtils.h"
+#import "KCLinks.h"
 #import "KCCommon.h"
 #import <QuartzCore/QuartzCore.h>
 
@@ -152,7 +153,9 @@ static const CGFloat kRowThumbWidth = 128;
 {
     KCTheme *t = [KCTheme shared];
     self.card = card;
-    self.titleLabel.text = title.length ? title : displayName;
+    // (web addresses in the title show in the link colour; they open from the player, or by holding the row.
+    // iOS 6 draws an attributed text of several lines only with word wrapping.)
+    [KCLinks showText:title.length ? title : displayName inLabel:self.titleLabel linkColor:[t linkColor] lineBreakMode:card ? NSLineBreakByTruncatingTail : NSLineBreakByWordWrapping];
     self.nameLabel.text = displayName;
     self.categoryLabel.text = category ?: @"";
     self.avatar.hidden = !card;
@@ -369,7 +372,7 @@ static const CGFloat kRowThumbWidth = 128;
     KCTheme *t = [KCTheme shared];
     [self.thumbnail setImageURL:video.previewURL placeholder:[t thumbnailPlaceholder]];
     [self.lengthPill setText:[KCUtils formatDuration:video.length] image:[t darkPillImage]];
-    self.titleLabel.text = video.title.length ? video.title : L(@"Untitled");
+    [KCLinks showText:video.title.length ? video.title : L(@"Untitled") inLabel:self.titleLabel linkColor:[t linkColor] lineBreakMode:NSLineBreakByWordWrapping];
     NSMutableArray *detail = [NSMutableArray array];
     if (video.ownerName.length) [detail addObject:video.ownerName];
     if (video.categoryName.length) [detail addObject:video.categoryName];
@@ -384,7 +387,7 @@ static const CGFloat kRowThumbWidth = 128;
     KCTheme *t = [KCTheme shared];
     [self.thumbnail setImageURL:clip.thumbnailURL placeholder:[t thumbnailPlaceholder]];
     [self.lengthPill setText:[KCUtils formatDuration:clip.duration] image:[t darkPillImage]];
-    self.titleLabel.text = clip.title.length ? clip.title : L(@"Untitled");
+    [KCLinks showText:clip.title.length ? clip.title : L(@"Untitled") inLabel:self.titleLabel linkColor:[t linkColor] lineBreakMode:NSLineBreakByWordWrapping];
     NSMutableArray *detail = [NSMutableArray array];
     if (clip.broadcasterName.length) [detail addObject:clip.broadcasterName];
     if (clip.categoryName.length) [detail addObject:clip.categoryName];

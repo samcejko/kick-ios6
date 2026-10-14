@@ -134,7 +134,6 @@ static const CGFloat KCChatCellPadH = 8;
 @property (nonatomic) BOOL stuckToBottom;
 @property (nonatomic) NSUInteger unseen;
 @property (nonatomic, strong) KCChatMessage *tappedMessage;
-@property (nonatomic, copy) NSString *tappedLink;
 @end
 
 @implementation KCChatView
@@ -408,11 +407,8 @@ static const CGFloat KCChatCellPadH = 8;
     CGPoint inLayout = CGPointMake(p.x - KCChatCellPadH, p.y - KCChatCellPadV);
     KCChatLink *link = [cell.layout linkAtPoint:inLayout];
     if (link) {
-        self.tappedLink = link.url;
-        self.tappedMessage = cell.message;
-        UIActionSheet *sheet = [[UIActionSheet alloc] initWithTitle:link.url delegate:self cancelButtonTitle:L(@"Cancel") destructiveButtonTitle:nil otherButtonTitles:L(@"Open Link"), L(@"Copy Link"), nil];
-        sheet.tag = 2;
-        [sheet showInView:self];
+        // a tap opens the address straight away (the delegate knows where: in the app, a sister app, a browser)
+        if (link.url.length && [self.delegate respondsToSelector:@selector(chatView:didTapLink:)]) [self.delegate chatView:self didTapLink:link.url];
         return;
     }
     if ([cell.layout isNameAtPoint:inLayout]) {
@@ -423,8 +419,15 @@ static const CGFloat KCChatCellPadH = 8;
 - (void)tablePressed:(UILongPressGestureRecognizer *)gesture
 {
     if (gesture.state != UIGestureRecognizerStateBegan) return;
-    KCChatCell *cell = [self cellAtGesture:gesture point:NULL];
+    CGPoint p;
+    KCChatCell *cell = [self cellAtGesture:gesture point:&p];
     if (!cell || !cell.message.slug.length) return;
+    // held on an address: copy or share it; held anywhere else on the line: the message's actions
+    KCChatLink *link = [cell.layout linkAtPoint:CGPointMake(p.x - KCChatCellPadH, p.y - KCChatCellPadV)];
+    if (link && link.url.length && [self.delegate respondsToSelector:@selector(chatView:didPressLink:)]) {
+        [self.delegate chatView:self didPressLink:link.url];
+        return;
+    }
     [self showActionsForMessage:cell.message];
 }
 
@@ -443,14 +446,6 @@ static const CGFloat KCChatCellPadH = 8;
 {
     if (buttonIndex < 0 || buttonIndex == actionSheet.cancelButtonIndex) return;
     KCChatMessage *m = self.tappedMessage;
-    if (actionSheet.tag == 2) {
-        if (buttonIndex == actionSheet.firstOtherButtonIndex) {
-            if ([self.delegate respondsToSelector:@selector(chatView:didTapLink:)]) [self.delegate chatView:self didTapLink:self.tappedLink];
-        } else {
-            [UIPasteboard generalPasteboard].string = self.tappedLink ?: @"";
-        }
-        return;
-    }
     if (buttonIndex == 0) {
         if ([self.delegate respondsToSelector:@selector(chatView:didTapName:displayName:)]) [self.delegate chatView:self didTapName:m.slug displayName:m.displayName];
     } else if (buttonIndex == 1) {

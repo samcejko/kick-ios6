@@ -9,6 +9,7 @@
 #import "KCFavorites.h"
 #import "KCNavigator.h"
 #import "KCExternalOpen.h"
+#import "KCLinks.h"
 #import "KCSettings.h"
 #import "KCTheme.h"
 #import "KCUtils.h"
@@ -969,10 +970,20 @@ static const NSTimeInterval KCReplayLead = 20;             // the replay is fetc
 
 - (void)chatView:(KCChatView *)chatView didTapLink:(NSString *)url
 {
-    NSURL *u = [NSURL URLWithString:url];
-    if (!u) return;
-    // a chooser: copy the link, or open it in Safari or Surfari (the user's own iOS 6 browser)
-    [KCExternalOpen presentShareSheetForURL:u from:self anchor:nil];
+    // what every tapped link does: kick.com inside the app, YouTube/Twitch/TikTok to a sister app when installed,
+    // the rest to the browser (a chooser on iOS 6)
+    [KCExternalOpen openLink:url from:self anchor:nil];
+}
+
+- (void)chatView:(KCChatView *)chatView didPressLink:(NSString *)url
+{
+    // pressed and held: copy or share it
+    [KCExternalOpen presentShareSheetForURL:[KCLinks URLForLinkText:url] from:self anchor:nil];
+}
+
+- (void)playerViewDidTapTitle:(KCPlayerView *)view fromView:(UIView *)anchor
+{
+    [KCExternalOpen openLinks:[KCLinks urlsInText:self.playerView.title] from:self anchor:anchor];
 }
 
 #pragma mark - Chat replay (recordings)

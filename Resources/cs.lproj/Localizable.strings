@@ -135,13 +135,26 @@
 "%@ gifted %lu subscriptions" = "%@ daroval odběry: %lu";
 "%@ is hosting with %@" = "%@ hostuje s %@";
 "%lu new messages ↓" = "Nové zprávy: %lu ↓";
-"Open Link" = "Otevřít odkaz";
-"Copy Link" = "Kopírovat odkaz";
 "Open Channel" = "Otevřít kanál";
 "Copy Message" = "Kopírovat zprávu";
+
+/* Links (KCExternalOpen) */
 "Open in Surfari" = "Otevřít v Surfari";
 "Open in Safari" = "Otevřít v Safari";
+"Open in Tubie" = "Otevřít v Tubie";
+"Open in Twitcher" = "Otevřít v Twitcheru";
+"Open in TikTak" = "Otevřít v TikTaku";
 "Copy link" = "Kopírovat odkaz";
+"Share…" = "Sdílet…";
+"Links" = "Odkazy";
+
+/* Channel page: social links (names of the networks) */
+"Instagram" = "Instagram";
+"Twitter" = "Twitter";
+"YouTube" = "YouTube";
+"Discord" = "Discord";
+"TikTok" = "TikTok";
+"Facebook" = "Facebook";
 
 /* Settings */
 "Playback" = "Přehrávání";

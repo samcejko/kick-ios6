@@ -104,4 +104,28 @@
     if (nav) [nav pushViewController:vc animated:YES];
 }
 
+#pragma mark - kick.com addresses
+
++ (NSString *)channelSlugInKickURL:(NSURL *)url
+{
+    NSString *host = [url.host lowercaseString];
+    if (!host.length || !([host isEqualToString:@"kick.com"] || [host hasSuffix:@".kick.com"])) return nil;
+    // the first path component is the channel ("https://kick.com/xqc", "kick.com/xqc/videos"); the site's own pages
+    // are no channels
+    NSArray *parts = [url.path componentsSeparatedByString:@"/"];
+    NSString *slug = parts.count > 1 ? [parts[1] lowercaseString] : nil;
+    if (!slug.length) return nil;
+    NSArray *pages = @[ @"category", @"categories", @"search", @"browse", @"following", @"video", @"clips", @"dashboard", @"settings",
+                        @"terms", @"privacy", @"community-guidelines", @"about", @"help", @"support", @"login", @"register", @"api" ];
+    return [pages containsObject:slug] ? nil : slug;
+}
+
++ (BOOL)openKickURL:(NSURL *)url from:(UIViewController *)controller
+{
+    NSString *slug = [self channelSlugInKickURL:url];
+    if (!slug.length) return NO;
+    [self openChannelSlug:slug from:controller];
+    return YES;
+}
+
 @end

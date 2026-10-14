@@ -7,7 +7,8 @@
 @protocol KCChatViewDelegate <NSObject>
 @optional
 - (void)chatView:(KCChatView *)chatView didTapName:(NSString *)slug displayName:(NSString *)displayName;
-- (void)chatView:(KCChatView *)chatView didTapLink:(NSString *)url;
+- (void)chatView:(KCChatView *)chatView didTapLink:(NSString *)url;      // a tap: open it
+- (void)chatView:(KCChatView *)chatView didPressLink:(NSString *)url;    // pressed and held: share it
 @end
 
 // One chat line in the table

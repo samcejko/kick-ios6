@@ -20,7 +20,10 @@ for the extra emotes, to 7TV).
   screen, the chat next to or under the video, sound in the background, lock-screen controls
 - Live chat (read only) with badges, Kick and 7TV emotes (animated ones too), name colours, replies,
   subscriptions, gifts and hosts, moderation (deleted messages, timeouts, bans), the last messages when it opens
-- Channel pages: past broadcasts and clips (today, this week, this month, all time); favourites kept on the device
+- Channel pages: past broadcasts and clips (today, this week, this month, all time), the channel's social links;
+  favourites kept on the device
+- Web addresses in the chat, in titles and in channel descriptions can be tapped: kick.com opens in Kicker, YouTube,
+  Twitch and TikTok in the sister apps Tubie, Twitcher and TikTak when installed, the rest in Safari (or Surfari)
 - Past broadcasts with seeking, resume where you left off, and the chat replay in time with the video
 - Light and dark theme, English and Czech
 
@@ -77,8 +80,9 @@ Debugging over SSH: with a file named `debug` in the app's Documents folder (`En
 `tools/ipad.ps1`), `uiopen kicker:snapshot` draws the app's windows and `kicker:screen` grabs the real screen
 (video included) into the app's `tmp/screen.png` (`Get-IPadScreen`), `kicker:press?n=0` presses a button of the
 alert or sheet on screen, `kicker:press?title=<text>` a button, segment, switch row or list row with that text,
-`kicker:tab?n=1` switches tabs, `kicker:back` pops the navigation stack and `kicker:stats` logs the memory in use.
-`/var/log/syslog` carries the app's log lines (`[Kicker]`, `Get-KickerLog`).
+`kicker:tab?n=1` switches tabs, `kicker:back` pops the navigation stack, `kicker:stats` logs the memory in use and
+`kicker:link?url=<percent-encoded address>` does what a tap on that address in a text does (`&share=1`: what holding
+it does). `/var/log/syslog` carries the app's log lines (`[Kicker]`, `Get-KickerLog`).
 
 ## Project layout
 

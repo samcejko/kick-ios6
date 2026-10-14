@@ -3,6 +3,7 @@
 #import "KCSettings.h"
 #import "KCTheme.h"
 #import "KCUtils.h"
+#import "KCLinks.h"
 #import "KCCommon.h"
 
 static NSString * const KCChatImageAttribute = @"KCChatImage";   // NSNumber: index into imageSlots
@@ -131,14 +132,6 @@ static NSDictionary *KCTextAttributes(CTFontRef font, UIColor *color)
 {
     return @{ (__bridge NSString *)kCTFontAttributeName: (__bridge id)font,
               (__bridge NSString *)kCTForegroundColorAttributeName: (__bridge id)color.CGColor };
-}
-
-static BOOL KCLooksLikeLink(NSString *word)
-{
-    NSString *lower = [word lowercaseString];
-    if ([lower hasPrefix:@"http://"] || [lower hasPrefix:@"https://"]) return word.length > 10;
-    if ([lower hasPrefix:@"www."] && [lower rangeOfString:@"."].location != NSNotFound) return word.length > 6;
-    return NO;
 }
 
 + (KCChatLayout *)layoutForMessage:(KCChatMessage *)message style:(KCChatStyle *)style
@@ -334,16 +327,24 @@ static BOOL KCLooksLikeLink(NSString *word)
             [self appendEmote:emote to:s slots:slots height:emoteHeight font:font retina:retina];
         } else if ([word hasPrefix:@"@"] && word.length > 1) {
             [s appendAttributedString:[[NSAttributedString alloc] initWithString:word attributes:strong]];
-        } else if (KCLooksLikeLink(word)) {
-            KCChatLink *l = [[KCChatLink alloc] init];
-            l.url = [[word lowercaseString] hasPrefix:@"www."] ? [@"http://" stringByAppendingString:word] : word;
-            l.range = NSMakeRange(s.length, word.length);
-            [links addObject:l];
-            NSMutableDictionary *attributes = [link mutableCopy];
-            attributes[KCChatLinkAttribute] = @(links.count - 1);
-            [s appendAttributedString:[[NSAttributedString alloc] initWithString:word attributes:attributes]];
         } else {
-            [s appendAttributedString:[[NSAttributedString alloc] initWithString:word attributes:plain]];
+            // a web address ("https://…", "www.…", "kick.com/xqc"), tappable; the punctuation around it stays plain
+            NSRange address = [KCLinks linkRangeInWord:word];
+            if (address.location == NSNotFound) {
+                [s appendAttributedString:[[NSAttributedString alloc] initWithString:word attributes:plain]];
+            } else {
+                if (address.location > 0) [s appendAttributedString:[[NSAttributedString alloc] initWithString:[word substringToIndex:address.location] attributes:plain]];
+                NSString *addressText = [word substringWithRange:address];
+                KCChatLink *l = [[KCChatLink alloc] init];
+                l.url = [KCLinks urlForLinkText:addressText];
+                l.range = NSMakeRange(s.length, addressText.length);
+                [links addObject:l];
+                NSMutableDictionary *attributes = [link mutableCopy];
+                attributes[KCChatLinkAttribute] = @(links.count - 1);
+                [s appendAttributedString:[[NSAttributedString alloc] initWithString:addressText attributes:attributes]];
+                NSUInteger after = NSMaxRange(address);
+                if (after < word.length) [s appendAttributedString:[[NSAttributedString alloc] initWithString:[word substringFromIndex:after] attributes:plain]];
+            }
         }
         pos = end;
     }

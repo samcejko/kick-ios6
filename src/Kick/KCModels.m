@@ -1,6 +1,7 @@
 #import "KCModels.h"
 #import "KCCommon.h"
 #import "KCUtils.h"
+#import "KCLinks.h"
 
 #pragma mark - Pictures
 
@@ -65,6 +66,43 @@ static NSString *KCNameForDisplay(NSString *displayName, NSString *slug)
     if (!displayName.length) return slug ?: @"";
     if (!slug.length || [[displayName lowercaseString] isEqualToString:[slug lowercaseString]]) return displayName;
     return [NSString stringWithFormat:@"%@ (%@)", displayName, slug];
+}
+
+// The address of a social profile the way kick.com links it: the field usually holds a user name ("xqc", "@xqc"),
+// sometimes a whole address ("https://discord.gg/xqc", "youtube.com/@xQcOW")
+static NSString *KCSocialURL(NSString *network, NSString *value)
+{
+    NSString *v = [value stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if (!v.length) return nil;
+    if ([KCLinks linkRangeInWord:v].location != NSNotFound) return [KCLinks urlForLinkText:v];
+    NSString *handle = v;
+    while ([handle hasPrefix:@"@"] || [handle hasPrefix:@"/"]) handle = [handle substringFromIndex:1];
+    if (!handle.length || [handle rangeOfCharacterFromSet:[NSCharacterSet whitespaceCharacterSet]].location != NSNotFound) return nil;
+    if ([network isEqualToString:@"instagram"]) return [@"https://instagram.com/" stringByAppendingString:handle];
+    if ([network isEqualToString:@"twitter"]) return [@"https://twitter.com/" stringByAppendingString:handle];
+    if ([network isEqualToString:@"tiktok"]) return [@"https://www.tiktok.com/@" stringByAppendingString:handle];
+    if ([network isEqualToString:@"facebook"]) return [@"https://facebook.com/" stringByAppendingString:handle];
+    if ([network isEqualToString:@"discord"]) return [@"https://discord.gg/" stringByAppendingString:handle];
+    if ([network isEqualToString:@"youtube"]) {
+        // a channel id, a handle ("@name"), or a name the site resolves itself
+        if ([handle hasPrefix:@"UC"] && handle.length == 24) return [@"https://www.youtube.com/channel/" stringByAppendingString:handle];
+        if ([v hasPrefix:@"@"]) return [@"https://www.youtube.com/@" stringByAppendingString:handle];
+        return [@"https://www.youtube.com/" stringByAppendingString:handle];
+    }
+    return nil;
+}
+
+// The social links of a user object, in the order kick.com shows them
+static NSArray *KCSocialLinks(NSDictionary *user)
+{
+    NSArray *networks = @[ @[ @"instagram", @"Instagram" ], @[ @"twitter", @"Twitter" ], @[ @"youtube", @"YouTube" ],
+                           @[ @"discord", @"Discord" ], @[ @"tiktok", @"TikTok" ], @[ @"facebook", @"Facebook" ] ];
+    NSMutableArray *links = [NSMutableArray array];
+    for (NSArray *network in networks) {
+        NSString *url = KCSocialURL(network[0], KCStr(user[network[0]]));
+        if (url.length) [links addObject:@[ network[1], url ]];
+    }
+    return links;
 }
 
 #pragma mark - Stream
@@ -176,6 +214,7 @@ static NSString *KCNameForDisplay(NSString *displayName, NSString *slug)
     c.slug = [KCStr(ch[@"slug"]) lowercaseString];
     c.displayName = KCStr(user[@"username"]) ?: c.slug;
     c.bio = [KCUtils displayText:KCStr(user[@"bio"])];
+    c.socialLinks = KCSocialLinks(user);
     c.avatarURL = KCAvatar(user);
     c.bannerURL = KCImageURL(ch[@"banner_image"], 1200);
     c.offlineImageURL = KCImageURL(ch[@"offline_banner_image"], 1200);

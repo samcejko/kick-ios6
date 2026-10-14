@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.1 – 2026-10-14
+
+- Web addresses in the chat, in a channel's description and in the titles of streams, past broadcasts and clips show
+  in the link colour and can be tapped (in the chat and in the player straight away, on a channel page the
+  description and the live title, in lists by pressing and holding a row). A channel page also lists the channel's
+  Instagram, Twitter, YouTube, Discord, TikTok and Facebook links.
+- A link to kick.com opens inside Kicker (the channel page); a link to YouTube, Twitch or TikTok is offered to the
+  sister app Tubie, Twitcher or TikTak when it is installed. For other links iOS 6 asks for Safari or Surfari as
+  before; iOS 7 and newer open Safari straight away. Pressing and holding a link in the chat shares it (copy, Safari,
+  Surfari; the system's share sheet on iOS 7 and newer).
+- The iOS 6 package now declares iOS 6.0 up to 10.x, so that package managers no longer offer the 32-bit build to
+  64-bit devices with a rootful jailbreak.
+
 ## 0.2.0 – 2026-10-14
 
 - A second build for 64-bit devices with iOS 14–17 (iPhone X and newer), from the same source tree: the `.deb` with

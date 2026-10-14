@@ -1,6 +1,7 @@
 #import "KCPlayerView.h"
 #import "KCTheme.h"
 #import "KCUtils.h"
+#import "KCLinks.h"
 #import "KCCommon.h"
 
 static const NSTimeInterval KCControlsHideDelay = 4.0;
@@ -37,6 +38,7 @@ static const CGFloat KCBarHeight = 44;
 @property (nonatomic, strong) UIButton *retryButton;
 @property (nonatomic) BOOL controlsVisible;
 @property (nonatomic) BOOL scrubbing;
+@property (nonatomic) BOOL titleHasLinks;            // a web address in the title: a tap on it goes to the delegate
 @property (nonatomic) NSTimeInterval duration;
 @property (nonatomic, strong) NSTimer *hideTimer;
 @end
@@ -218,7 +220,15 @@ static const CGFloat KCBarHeight = 44;
     [self.closeButton setImage:closeIsBack ? [[KCTheme shared] backChevronWhite] : [[KCTheme shared] closeIconWhite] forState:UIControlStateNormal];
     self.closeButton.accessibilityLabel = closeIsBack ? L(@"Back") : L(@"Close");
 }
-- (void)setTitle:(NSString *)title { _title = [title copy]; self.titleLabel.text = title; }
+- (void)setTitle:(NSString *)title
+{
+    _title = [title copy];
+    // web addresses in the title show in the green and can be tapped. (The label takes the style of an attributed
+    // text's start, so its own style goes first: a title that begins with an address must not colour the next one.)
+    self.titleLabel.textColor = [UIColor whiteColor];
+    self.titleLabel.font = [UIFont boldSystemFontOfSize:15];
+    self.titleHasLinks = [KCLinks showText:title inLabel:self.titleLabel linkColor:[[KCTheme shared] liveColor] lineBreakMode:NSLineBreakByTruncatingTail];
+}
 - (void)setSubtitle:(NSString *)subtitle { _subtitle = [subtitle copy]; [self.subtitleButton setTitle:subtitle forState:UIControlStateNormal]; }
 - (void)setStatusText:(NSString *)statusText { _statusText = [statusText copy]; self.statusLabel.text = statusText; }
 - (void)setTopInset:(CGFloat)topInset { _topInset = topInset; [self setNeedsLayout]; }
@@ -307,7 +317,13 @@ static const CGFloat KCBarHeight = 44;
 
 - (void)tapped:(UITapGestureRecognizer *)gesture
 {
-    CGPoint p = [gesture locationInView:self];
+    CGPoint p = [gesture locationInView:self];   // (the controls view has the same frame: one coordinate space)
+    // a tap on a title with a web address in it opens the address; the controls stay
+    if (self.controlsVisible && self.titleHasLinks && CGRectContainsPoint(CGRectInset(self.titleLabel.frame, -4, -6), p)) {
+        [self showControls:YES animated:NO];
+        if ([self.delegate respondsToSelector:@selector(playerViewDidTapTitle:fromView:)]) [self.delegate playerViewDidTapTitle:self fromView:self.titleLabel];
+        return;
+    }
     if (self.controlsVisible && !self.controlsLocked) {
         // a tap on the bars is for the buttons (they handle it themselves); one on the picture hides the controls
         if (p.y > self.topInset + KCBarHeight && p.y < self.bounds.size.height - self.safeInsets.bottom - KCBarHeight) [self showControls:NO animated:YES];
